@@ -17,6 +17,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
+// Health Check
+app.get('/', (req, res) => res.json({ status: 'active', message: 'Guddu Traders API is running' }));
+
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
