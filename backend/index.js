@@ -34,13 +34,18 @@ const startServer = async () => {
         app.use('/api/reports', require('./routes/reportRoutes'));
         app.use('/api/returns', require('./routes/saleReturnRoutes'));
 
-        const PORT = process.env.PORT || 5000;
+        const PORT = parseInt(process.env.PORT) || 5000;
+        console.log(`Attempting to start server on port ${PORT}...`);
 
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`Server running on port ${PORT}`);
+        const server = app.listen(PORT, '0.0.0.0', () => {
+            console.log(`SUCCESS: Server is listening on 0.0.0.0:${PORT}`);
+        });
+
+        server.on('error', (error) => {
+            console.error('SERVER ERROR:', error);
         });
     } catch (err) {
-        console.error('Failed to start server:', err);
+        console.error('CRITICAL: Failed to start server:', err);
         process.exit(1);
     }
 };
