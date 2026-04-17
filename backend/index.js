@@ -32,8 +32,8 @@ app.use('/api/returns', require('./routes/saleReturnRoutes'));
 
 const PORT = parseInt(process.env.PORT) || 5000;
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server starts listening on 0.0.0.0:${PORT}`);
+app.listen(PORT, () => {
+    console.log(`🚀 Server starts listening on port ${PORT}`);
 
     // Connect to DB in background so health check passes instantly
     connectDB().then(() => {
