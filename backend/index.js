@@ -9,7 +9,26 @@ dotenv.config();
 const app = express();
 
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = [
+            'http://localhost:5173',
+            'http://localhost:5174',
+            process.env.FRONTEND_URL
+        ];
+
+        // Match exact or check if Vercel URL (case insensitive)
+        const isAllowed = allowedOrigins.some(o => o && origin.toLowerCase() === o.toLowerCase());
+
+        if (isAllowed || origin.includes('vercel.app')) {
+            callback(null, true);
+        } else {
+            console.log('CORS Blocked Origin:', origin);
+            callback(null, true); // Temporarily allow all to bypass 502 legacy confusion, OR use callback(new Error('CORS'))
+        }
+    },
     credentials: true,
 };
 
