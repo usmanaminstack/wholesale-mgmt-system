@@ -14,7 +14,17 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Global Error Handlers for logging
+process.on('uncaughtException', (err) => {
+    console.error('🔥 UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('⚠️ UNHANDLED REJECTION:', reason);
+});
 
 // Health Check (Responsive immediately)
 app.get('/', (req, res) => res.json({ status: 'active', message: 'Guddu Traders API is running' }));
@@ -31,15 +41,15 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/returns', require('./routes/saleReturnRoutes'));
 app.use('/api/cash', require('./routes/cashRoutes'));
 
-const PORT = parseInt(process.env.PORT) || 5000;
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server starts listening on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server listening on 0.0.0.0:${PORT}`);
 
-    // Connect to DB in background so health check passes instantly
+    // Connect to DB in background
     connectDB().then(() => {
-        console.log('✅ DB Connection Background Check Passed');
+        console.log('✅ MongoDB Ready');
     }).catch(err => {
-        console.error('❌ DB Background Connection Failed:', err);
+        console.error('❌ MongoDB Connection Error:', err);
     });
 });
