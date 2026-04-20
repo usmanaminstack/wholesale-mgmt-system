@@ -286,9 +286,9 @@ const Dashboard = () => {
                         <tbody>
                             {activities.map((act, i) => (
                                 <tr key={act._id} style={{ borderBottom: i === activities.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(act.date).toLocaleDateString()}</td>
-                                    <td style={{ fontWeight: '600' }}>{act.entityName}</td>
-                                    <td>
+                                    <td data-label="Date" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(act.date).toLocaleDateString()}</td>
+                                    <td data-label="Entity" style={{ fontWeight: '600' }}>{act.entityName}</td>
+                                    <td data-label="Type">
                                         <span style={{
                                             padding: '4px 8px',
                                             borderRadius: '6px',
@@ -297,9 +297,9 @@ const Dashboard = () => {
                                             fontWeight: '700'
                                         }}>{act.transactionType}</span>
                                     </td>
-                                    <td style={{ color: act.debit > 0 ? 'var(--danger)' : 'inherit' }}>{act.debit > 0 ? `PKR ${act.debit.toLocaleString()}` : '-'}</td>
-                                    <td style={{ color: act.credit > 0 ? 'var(--success)' : 'inherit' }}>{act.credit > 0 ? `PKR ${act.credit.toLocaleString()}` : '-'}</td>
-                                    <td style={{ fontWeight: '700' }}>PKR {act.balance.toLocaleString()}</td>
+                                    <td data-label="Debit" style={{ color: act.debit > 0 ? 'var(--danger)' : 'inherit' }}>{act.debit > 0 ? `PKR ${act.debit.toLocaleString()}` : '-'}</td>
+                                    <td data-label="Credit" style={{ color: act.credit > 0 ? 'var(--success)' : 'inherit' }}>{act.credit > 0 ? `PKR ${act.credit.toLocaleString()}` : '-'}</td>
+                                    <td data-label="Balance" style={{ fontWeight: '700' }}>PKR {act.balance.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>

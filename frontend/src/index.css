@@ -129,12 +129,17 @@ select:focus {
   }
 
   /* App-like Touch Targets */
+  /* App-like Touch Targets & Animations */
   input,
   select,
   textarea,
   button {
     font-size: 16px !important;
-    /* Disables auto-zoom on iOS */
+  }
+
+  button:active {
+    transform: scale(0.96);
+    opacity: 0.9;
   }
 
   button {
@@ -149,14 +154,14 @@ select:focus {
   }
 
   .card {
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    border: none;
-    margin-bottom: 16px;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
   }
 
-  /* Transform Tables into Mobile Cards */
+  /* Transform Tables into Mobile Cards (Advanced) */
   table,
   thead,
   tbody,
@@ -174,61 +179,86 @@ select:focus {
   tbody {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
 
   tr {
     background: #ffffff;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border);
     margin: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  tr::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
   }
 
   td {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px dashed #e2e8f0;
+    padding: 12px 0;
+    border-bottom: 1px solid #f8fafc;
     font-size: 0.95rem;
-    text-align: right;
   }
 
   td:last-child {
     border-bottom: none;
-    padding-bottom: 0;
+    padding-top: 16px;
+    margin-top: 4px;
     justify-content: flex-end;
-    /* right align buttons usually at the end */
+    gap: 12px;
   }
 
-  /* Emphasize the first cell as a title/header of the card */
+  /* Add data-label support for mobile cards */
+  td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  /* Title cell (always first) */
   td:first-child {
     font-weight: 800;
-    font-size: 1.15rem;
-    color: var(--primary-dark);
-    padding-bottom: 12px;
-    border-bottom: 2px solid #e2e8f0;
-    margin-bottom: 4px;
+    font-size: 1.2rem;
+    color: var(--text);
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
+    margin-bottom: 8px;
     justify-content: flex-start;
   }
 
-  /* Bottom Navigation Styles */
+  td:first-child::before {
+    display: none;
+  }
+
+  /* Bottom Navigation Refinement */
   .bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 65px;
-    background: #ffffff;
+    height: 75px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
     border-top: 1px solid var(--border);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     display: flex;
     justify-content: space-around;
     align-items: center;
     padding-bottom: env(safe-area-inset-bottom);
-    z-index: 100;
+    z-index: 1000;
   }
 
   .bottom-nav-item {
@@ -236,16 +266,20 @@ select:focus {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     text-decoration: none;
     color: var(--sidebar-text);
     background: transparent;
     border: none;
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
     width: 20%;
     height: 100%;
-    padding: 0;
+    transition: all 0.3s;
+  }
+
+  .bottom-nav-item svg {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   .bottom-nav-item.active {
@@ -253,6 +287,7 @@ select:focus {
   }
 
   .bottom-nav-item.active svg {
+    transform: translateY(-4px) scale(1.1);
     color: var(--primary);
   }
 }

@@ -95,16 +95,16 @@ const Customers = () => {
                     <table>
                         <thead>
                             <tr>
-                                <th>Customer Name</th>
-                                <th>Contact info</th>
-                                <th>Receivable Balance</th>
-                                <th>Actions</th>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Receivable</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filtered.map(c => (
                                 <tr key={c._id}>
-                                    <td>
+                                    <td data-label="Name">
                                         <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#eef2ff', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 <User size={18} />
@@ -112,20 +112,22 @@ const Customers = () => {
                                             {c.name}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Contact">
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}><Phone size={12} /> {c.phone}</div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}><MapPin size={12} /> {c.address}</div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Balance">
                                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px', backgroundColor: c.outstandingReceivable > 0 ? '#fee2e2' : '#f0fdf4', color: c.outstandingReceivable > 0 ? '#991b1b' : '#166534', fontWeight: '700' }}>
                                             <DollarSign size={14} /> {c.outstandingReceivable.toLocaleString()}
                                         </div>
                                     </td>
-                                    <td style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => { setSelectedCustomer(c); setShowLedgerModal(true); fetchLedger(c._id); }} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', color: 'var(--primary)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><History size={14} /> View Ledger</button>
-                                        <button onClick={() => handleDeleteCustomer(c._id)} style={{ padding: '6px', color: 'var(--danger)', background: 'none' }} title="Delete Customer"><Trash2 size={18} /></button>
+                                    <td data-label="Actions" style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => { setSelectedCustomer(c); setShowLedgerModal(true); fetchLedger(c._id); }} style={{ padding: '8px 12px', backgroundColor: '#f1f5f9', color: 'var(--primary)', fontSize: '0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}><History size={14} /> Ledger</button>
+                                            <button onClick={() => handleDeleteCustomer(c._id)} style={{ padding: '8px', color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }} title="Delete"><Trash2 size={18} /></button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -166,7 +168,7 @@ const Customers = () => {
                             <button onClick={() => setShowLedgerModal(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X size={24} /></button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', height: '100%', overflow: 'hidden' }}>
+                        <div className="ledger-modal-content" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', height: '100%', overflow: 'hidden' }}>
                             {/* Ledger Table Section */}
                             <div style={{ overflowY: 'auto', padding: '24px', borderRight: '1px solid var(--border)' }}>
                                 {loadingLedger ? (
@@ -175,18 +177,18 @@ const Customers = () => {
                                     <table className="ledger-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
                                             <tr style={{ textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', borderBottom: '2px solid var(--border)' }}>
-                                                <th style={{ padding: '12px 0' }}>Date</th>
+                                                <th>Date</th>
                                                 <th>Type</th>
-                                                <th>Debit (+)</th>
-                                                <th>Credit (-)</th>
-                                                <th style={{ textAlign: 'right' }}>Balance</th>
+                                                <th>Dr (+)</th>
+                                                <th>Cr (-)</th>
+                                                <th style={{ textAlign: 'right' }}>Bal</th>
                                             </tr>
                                         </thead>
                                         <tbody style={{ fontSize: '0.85rem' }}>
                                             {ledger.map((entry, idx) => (
                                                 <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                    <td style={{ padding: '12px 0', color: 'var(--text-muted)' }}>{new Date(entry.date).toLocaleDateString()}</td>
-                                                    <td>
+                                                    <td data-label="Date" style={{ padding: '12px 0', color: 'var(--text-muted)' }}>{new Date(entry.date).toLocaleDateString()}</td>
+                                                    <td data-label="Type">
                                                         <span style={{
                                                             fontSize: '0.7rem',
                                                             fontWeight: '700',
@@ -198,9 +200,9 @@ const Customers = () => {
                                                             {entry.transactionType}
                                                         </span>
                                                     </td>
-                                                    <td style={{ color: 'var(--danger)', fontWeight: '600' }}>{entry.debit > 0 ? `+${entry.debit.toLocaleString()}` : '-'}</td>
-                                                    <td style={{ color: 'var(--success)', fontWeight: '600' }}>{entry.credit > 0 ? `-${entry.credit.toLocaleString()}` : '-'}</td>
-                                                    <td style={{ textAlign: 'right', fontWeight: '700' }}>{entry.balance.toLocaleString()}</td>
+                                                    <td data-label="Debit" style={{ color: 'var(--danger)', fontWeight: '600' }}>{entry.debit > 0 ? `+${entry.debit.toLocaleString()}` : '-'}</td>
+                                                    <td data-label="Credit" style={{ color: 'var(--success)', fontWeight: '600' }}>{entry.credit > 0 ? `-${entry.credit.toLocaleString()}` : '-'}</td>
+                                                    <td data-label="Balance" style={{ textAlign: 'right', fontWeight: '700' }}>{entry.balance.toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                             {ledger.length === 0 && (
@@ -260,6 +262,13 @@ const Customers = () => {
                             </div>
                         </div>
                     </div>
+                    <style dangerouslySetInnerHTML={{
+                        __html: `
+              @media (max-width: 850px) {
+                .ledger-modal-content { grid-template-columns: 1fr !important; overflow-y: auto !important; }
+                .ledger-modal-content > div { border-right: none !important; border-bottom: 1px solid var(--border); }
+              }
+            `}} />
                 </div>
             )}
         </div>

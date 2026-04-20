@@ -204,23 +204,23 @@ const Sales = () => {
                             <tr>
                                 <th>Date</th>
                                 <th>Customer</th>
-                                <th>Total Amount</th>
-                                <th>Received</th>
-                                <th>Balance</th>
+                                <th>Total</th>
+                                <th>Recv</th>
+                                <th>Bal</th>
                                 <th>Mode</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {sales.map(s => (
                                 <tr key={s._id}>
-                                    <td style={{ fontSize: '0.85rem' }}>{new Date(s.saleDate).toLocaleDateString()}</td>
-                                    <td style={{ fontWeight: '600' }}>{s.customer?.name || s.customerName || 'Guest'}</td>
-                                    <td style={{ fontWeight: '700' }}>PKR {s.totalAmount?.toLocaleString()}</td>
-                                    <td>PKR {s.receivedAmount?.toLocaleString()}</td>
-                                    <td style={{ color: s.balanceAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {s.balanceAmount?.toLocaleString()}</td>
-                                    <td>
+                                    <td data-label="Date" style={{ fontSize: '0.85rem' }}>{new Date(s.saleDate).toLocaleDateString()}</td>
+                                    <td data-label="Customer" style={{ fontWeight: '600' }}>{s.customer?.name || s.customerName || 'Guest'}</td>
+                                    <td data-label="Total" style={{ fontWeight: '700' }}>PKR {s.totalAmount?.toLocaleString()}</td>
+                                    <td data-label="Recv">PKR {s.receivedAmount?.toLocaleString()}</td>
+                                    <td data-label="Bal" style={{ color: s.balanceAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {s.balanceAmount?.toLocaleString()}</td>
+                                    <td data-label="Type">
                                         <span style={{
                                             padding: '4px 8px',
                                             borderRadius: '6px',
@@ -232,7 +232,7 @@ const Sales = () => {
                                             {s.isRetail ? 'Retail' : 'Wholesale'}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Status">
                                         <span style={{
                                             padding: '4px 8px',
                                             borderRadius: '6px',
@@ -244,11 +244,11 @@ const Sales = () => {
                                             {s.balanceAmount === 0 ? 'PAID' : 'DUE'}
                                         </span>
                                     </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => { setSelectedSale(s); setShowViewModal(true); }} style={{ background: 'none', color: 'var(--primary)', padding: '4px' }} title="View Invoice"><Eye size={18} /></button>
-                                            <button onClick={() => handleEditClick(s)} style={{ background: 'none', color: 'var(--accent)', padding: '4px' }} title="Edit Invoice"><Edit size={18} /></button>
-                                            <button onClick={() => handleDeleteSale(s._id)} style={{ background: 'none', color: 'var(--danger)', padding: '4px' }} title="Delete Invoice"><Trash2 size={18} /></button>
+                                    <td data-label="Actions" style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => { setSelectedSale(s); setShowViewModal(true); }} style={{ background: 'var(--bg)', color: 'var(--primary)', padding: '8px', borderRadius: '8px' }} title="View Invoice"><Eye size={18} /></button>
+                                            <button onClick={() => handleEditClick(s)} style={{ background: 'var(--bg)', color: 'var(--accent)', padding: '8px', borderRadius: '8px' }} title="Edit Invoice"><Edit size={18} /></button>
+                                            <button onClick={() => handleDeleteSale(s._id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '8px', borderRadius: '8px' }} title="Delete Invoice"><Trash2 size={18} /></button>
                                         </div>
                                     </td>
                                 </tr>

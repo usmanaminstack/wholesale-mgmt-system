@@ -155,27 +155,27 @@ const Purchases = () => {
                             <tr>
                                 <th>Date</th>
                                 <th>Supplier</th>
-                                <th>Grand Total</th>
+                                <th>Total</th>
                                 <th>Paid</th>
-                                <th>Balance</th>
-                                <th>Method</th>
-                                <th>Actions</th>
+                                <th>Bal</th>
+                                <th>Type</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {purchases.map(p => (
                                 <tr key={p._id}>
-                                    <td style={{ fontSize: '0.85rem' }}>{new Date(p.purchaseDate).toLocaleDateString()}</td>
-                                    <td style={{ fontWeight: '600' }}>
+                                    <td data-label="Date" style={{ fontSize: '0.85rem' }}>{new Date(p.purchaseDate).toLocaleDateString()}</td>
+                                    <td data-label="Supplier" style={{ fontWeight: '600' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <Truck size={14} color="var(--primary)" />
                                             {p.supplier?.name}
                                         </div>
                                     </td>
-                                    <td style={{ fontWeight: '700' }}>PKR {p.grandTotal?.toLocaleString()}</td>
-                                    <td>PKR {p.paidAmount?.toLocaleString()}</td>
-                                    <td style={{ color: p.balanceAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {p.balanceAmount?.toLocaleString()}</td>
-                                    <td>
+                                    <td data-label="Total" style={{ fontWeight: '700' }}>PKR {p.grandTotal?.toLocaleString()}</td>
+                                    <td data-label="Paid">PKR {p.paidAmount?.toLocaleString()}</td>
+                                    <td data-label="Bal" style={{ color: p.balanceAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {p.balanceAmount?.toLocaleString()}</td>
+                                    <td data-label="Method">
                                         <span style={{
                                             padding: '4px 10px',
                                             borderRadius: '6px',
@@ -187,10 +187,10 @@ const Purchases = () => {
                                             {p.paymentType}
                                         </span>
                                     </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => handleEditClick(p)} style={{ background: 'none', color: 'var(--accent)', padding: '4px' }} title="Edit"><Edit size={16} /></button>
-                                            <button onClick={() => handleDeletePurchase(p._id)} style={{ background: 'none', color: 'var(--danger)', padding: '4px' }} title="Delete"><Trash2 size={16} /></button>
+                                    <td data-label="Actions" style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => handleEditClick(p)} style={{ background: 'var(--bg)', color: 'var(--accent)', padding: '8px', borderRadius: '8px' }} title="Edit"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeletePurchase(p._id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '8px', borderRadius: '8px' }} title="Delete"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>

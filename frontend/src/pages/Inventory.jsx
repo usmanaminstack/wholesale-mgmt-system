@@ -123,26 +123,26 @@ const Inventory = () => {
                         <thead>
                             <tr>
                                 <th>Product</th>
-                                <th>Category</th>
-                                <th className="desktop-only">Carton Size</th>
-                                <th className="desktop-only">Cost (C/P)</th>
-                                <th>Price (C/P)</th>
+                                <th>Cat</th>
+                                <th className="desktop-only">Carton</th>
+                                <th className="desktop-only">Cost</th>
+                                <th>Price</th>
                                 <th>Stock</th>
-                                <th>Actions</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredProducts.map(p => (
                                 <tr key={p._id}>
-                                    <td>
+                                    <td data-label="Product">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div style={{ padding: '8px', backgroundColor: '#f1f5f9', borderRadius: '8px' }}><Package size={16} color="var(--primary)" /></div>
                                             <span style={{ fontWeight: '600' }}>{p.name}</span>
                                         </div>
                                     </td>
-                                    <td><span style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', borderRadius: '50px', fontSize: '0.75rem', color: 'var(--secondary)' }}>{p.category}</span></td>
-                                    <td className="desktop-only">{p.piecesPerCarton} <span style={{ color: 'var(--text-muted)' }}>pcs</span></td>
-                                    <td className="desktop-only">
+                                    <td data-label="Cat"><span style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', borderRadius: '50px', fontSize: '0.75rem', color: 'var(--secondary)' }}>{p.category}</span></td>
+                                    <td data-label="Carton" className="desktop-only">{p.piecesPerCarton} <span style={{ color: 'var(--text-muted)' }}>pcs</span></td>
+                                    <td data-label="Cost" className="desktop-only">
                                         <div style={{ fontSize: '0.85rem' }}>
                                             <div style={{ color: 'var(--accent)', fontWeight: '600' }} title="Weighted Average Cost">
                                                 <span style={{ color: 'var(--text-muted)' }}>Avg C:</span> {p.costPricePerCarton?.toFixed(1)}
@@ -152,13 +152,13 @@ const Inventory = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Price">
                                         <div style={{ fontSize: '0.85rem' }}>
                                             <div><span style={{ color: 'var(--text-muted)' }}>C:</span> {p.pricePerCarton}</div>
                                             <div><span style={{ color: 'var(--text-muted)' }}>P:</span> {p.pricePerPiece}</div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Stock">
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <span style={{
                                                 fontWeight: '700',
@@ -170,14 +170,16 @@ const Inventory = () => {
                                                 {p.stockInPieces} {p.stockInPieces <= p.lowStockThreshold && <AlertTriangle size={12} />}
                                             </span>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                ≈ {(p.stockInPieces / p.piecesPerCarton).toFixed(1)} Cartons
+                                                ≈ {(p.stockInPieces / p.piecesPerCarton).toFixed(1)} Ctn
                                             </span>
                                         </div>
                                     </td>
-                                    <td style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => { setEditingProduct(p); setAdjustmentData({ pieces: 0, reason: '' }); setShowAdjustModal(true); }} style={{ background: 'none', color: 'var(--success)', padding: '6px' }} title="Adjust Stock"><Package size={16} /></button>
-                                        <button onClick={() => handleEdit(p)} style={{ background: 'none', color: 'var(--primary)', padding: '6px' }}><Edit2 size={16} /></button>
-                                        <button onClick={() => handleDeleteProduct(p._id)} style={{ background: 'none', color: 'var(--danger)', padding: '6px' }}><Trash2 size={16} /></button>
+                                    <td data-label="Actions" style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => { setEditingProduct(p); setAdjustmentData({ pieces: 0, reason: '' }); setShowAdjustModal(true); }} style={{ background: 'var(--bg)', color: 'var(--success)', padding: '8px', borderRadius: '8px' }} title="Adjust Stock"><Package size={16} /></button>
+                                            <button onClick={() => handleEdit(p)} style={{ background: 'var(--bg)', color: 'var(--primary)', padding: '8px', borderRadius: '8px' }}><Edit2 size={16} /></button>
+                                            <button onClick={() => handleDeleteProduct(p._id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '8px', borderRadius: '8px' }}><Trash2 size={16} /></button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

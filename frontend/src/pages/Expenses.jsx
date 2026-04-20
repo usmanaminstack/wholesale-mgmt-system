@@ -108,15 +108,15 @@ const Expenses = () => {
                                 <th>Category</th>
                                 <th>Amount</th>
                                 <th>Method</th>
-                                <th>Description</th>
-                                <th>Actions</th>
+                                <th className="desktop-only">Description</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {expenses.map(e => (
                                 <tr key={e._id}>
-                                    <td style={{ fontSize: '0.85rem' }}>{new Date(e.expenseDate).toLocaleDateString()}</td>
-                                    <td>
+                                    <td data-label="Date" style={{ fontSize: '0.85rem' }}>{new Date(e.expenseDate).toLocaleDateString()}</td>
+                                    <td data-label="Cat">
                                         <span style={{
                                             padding: '4px 10px',
                                             borderRadius: '50px',
@@ -129,20 +129,20 @@ const Expenses = () => {
                                             {e.category}
                                         </span>
                                     </td>
-                                    <td style={{ fontWeight: '700', color: 'var(--danger)' }}>PKR {e.amount?.toLocaleString()}</td>
-                                    <td><span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{e.paymentMethod || 'Cash'}</span></td>
-                                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{e.description || 'No description provided'}</td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => handleEditClick(e)} style={{ background: 'none', color: 'var(--accent)', padding: '4px' }}><Edit2 size={16} /></button>
-                                            <button onClick={() => handleDeleteExpense(e._id)} style={{ background: 'none', color: 'var(--danger)', padding: '4px' }}><Trash2 size={16} /></button>
+                                    <td data-label="Amount" style={{ fontWeight: '700', color: 'var(--danger)' }}>PKR {e.amount?.toLocaleString()}</td>
+                                    <td data-label="Method"><span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{e.paymentMethod || 'Cash'}</span></td>
+                                    <td data-label="Note" className="desktop-only" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{e.description || 'No description provided'}</td>
+                                    <td data-label="Actions" style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => handleEditClick(e)} style={{ background: 'var(--bg)', color: 'var(--accent)', padding: '8px', borderRadius: '8px' }}><Edit2 size={16} /></button>
+                                            <button onClick={() => handleDeleteExpense(e._id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '8px', borderRadius: '8px' }}><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
                             ))}
                             {expenses.length === 0 && (
                                 <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No expenses recorded yet.</td>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No expenses recorded yet.</td>
                                 </tr>
                             )}
                         </tbody>

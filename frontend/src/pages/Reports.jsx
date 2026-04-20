@@ -223,41 +223,41 @@ const Reports = () => {
                                     <tr>
                                         <th>Date</th>
                                         <th>Type</th>
-                                        <th>Description / Entity</th>
-                                        <th>Revenue</th>
-                                        <th>Expense/Cost</th>
-                                        <th>Net Impact</th>
+                                        <th>Entity/Note</th>
+                                        <th>Rev</th>
+                                        <th>Cost</th>
+                                        <th style={{ textAlign: 'right' }}>Net</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {sales.map(s => (
                                         <tr key={s._id}>
-                                            <td>{new Date(s.saleDate).toLocaleDateString()}</td>
-                                            <td><span style={{ color: 'var(--success)', fontWeight: '600' }}>SALE</span></td>
-                                            <td>{s.customer?.name || s.customerName || 'Walk-in'}</td>
-                                            <td style={{ fontWeight: '600' }}>PKR {s.totalAmount.toLocaleString()}</td>
-                                            <td style={{ color: 'var(--text-muted)' }}>-</td>
-                                            <td style={{ color: 'var(--success)', fontWeight: '700' }}>+{s.totalAmount.toLocaleString()}</td>
+                                            <td data-label="Date">{new Date(s.saleDate).toLocaleDateString()}</td>
+                                            <td data-label="Type"><span style={{ color: 'var(--success)', fontWeight: '600' }}>SALE</span></td>
+                                            <td data-label="Entity">{s.customer?.name || s.customerName || 'Walk-in'}</td>
+                                            <td data-label="Rev" style={{ fontWeight: '600' }}>{s.totalAmount.toLocaleString()}</td>
+                                            <td data-label="Cost" style={{ color: 'var(--text-muted)' }}>-</td>
+                                            <td data-label="Net" style={{ color: 'var(--success)', fontWeight: '700', textAlign: 'right' }}>+{s.totalAmount.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                     {purchases.map(p => (
                                         <tr key={p._id}>
-                                            <td>{new Date(p.purchaseDate).toLocaleDateString()}</td>
-                                            <td><span style={{ color: 'var(--danger)', fontWeight: '600' }}>PURCHASE</span></td>
-                                            <td>{p.supplier?.name || 'Unknown'}</td>
-                                            <td style={{ color: 'var(--text-muted)' }}>-</td>
-                                            <td style={{ fontWeight: '600' }}>PKR {p.grandTotal.toLocaleString()}</td>
-                                            <td style={{ color: 'var(--danger)', fontWeight: '700' }}>-{p.grandTotal.toLocaleString()}</td>
+                                            <td data-label="Date">{new Date(p.purchaseDate).toLocaleDateString()}</td>
+                                            <td data-label="Type"><span style={{ color: 'var(--danger)', fontWeight: '600' }}>PURCH</span></td>
+                                            <td data-label="Entity">{p.supplier?.name || 'Unknown'}</td>
+                                            <td data-label="Rev" style={{ color: 'var(--text-muted)' }}>-</td>
+                                            <td data-label="Cost" style={{ fontWeight: '600' }}>{p.grandTotal.toLocaleString()}</td>
+                                            <td data-label="Net" style={{ color: 'var(--danger)', fontWeight: '700', textAlign: 'right' }}>-{p.grandTotal.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                     {expenses.map(e => (
                                         <tr key={e._id}>
-                                            <td>{new Date(e.expenseDate).toLocaleDateString()}</td>
-                                            <td><span style={{ color: '#f59e0b', fontWeight: '600' }}>EXPENSE</span></td>
-                                            <td>{e.description} ({e.category})</td>
-                                            <td style={{ color: 'var(--text-muted)' }}>-</td>
-                                            <td style={{ fontWeight: '600' }}>PKR {e.amount.toLocaleString()}</td>
-                                            <td style={{ color: 'var(--danger)', fontWeight: '700' }}>-{e.amount.toLocaleString()}</td>
+                                            <td data-label="Date">{new Date(e.expenseDate).toLocaleDateString()}</td>
+                                            <td data-label="Type"><span style={{ color: '#f59e0b', fontWeight: '600' }}>EXP</span></td>
+                                            <td data-label="Entity">{e.description || e.category}</td>
+                                            <td data-label="Rev" style={{ color: 'var(--text-muted)' }}>-</td>
+                                            <td data-label="Cost" style={{ fontWeight: '600' }}>{e.amount.toLocaleString()}</td>
+                                            <td data-label="Net" style={{ color: 'var(--danger)', fontWeight: '700', textAlign: 'right' }}>-{e.amount.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                     {sales.length === 0 && purchases.length === 0 && expenses.length === 0 && (
@@ -266,12 +266,12 @@ const Reports = () => {
                                         </tr>
                                     )}
                                 </tbody>
-                                <tfoot style={{ backgroundColor: '#f8fafc', fontWeight: '800' }}>
+                                <tfoot style={{ backgroundColor: '#f8fafc', fontWeight: '800' }} className="desktop-only">
                                     <tr>
                                         <td colSpan="3" style={{ textAlign: 'right' }}>PERIOD TOTALS:</td>
                                         <td style={{ color: 'var(--success)' }}>PKR {profitData?.totalSales?.toLocaleString()}</td>
                                         <td style={{ color: 'var(--danger)' }}>PKR {((profitData?.totalCOGS || 0) + (profitData?.totalExpenses || 0)).toLocaleString()}</td>
-                                        <td style={{ backgroundColor: '#f0fdf4', color: 'var(--success)' }}>PKR {profitData?.netProfit?.toLocaleString()}</td>
+                                        <td style={{ backgroundColor: '#f0fdf4', color: 'var(--success)', textAlign: 'right' }}>PKR {profitData?.netProfit?.toLocaleString()}</td>
                                     </tr>
                                 </tfoot>
                             </table>
