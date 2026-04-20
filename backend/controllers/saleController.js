@@ -108,7 +108,16 @@ exports.createSale = async (req, res) => {
 
 exports.getSales = async (req, res) => {
     try {
-        const sales = await Sale.find({}).sort({ saleDate: -1 }).populate('customer').populate('items.product');
+        const { startDate, endDate } = req.query;
+        let query = {};
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.saleDate = { $gte: start, $lte: end };
+        }
+        const sales = await Sale.find(query).sort({ saleDate: -1 }).populate('customer').populate('items.product');
         res.json(sales);
     } catch (error) {
         res.status(500).json({ message: error.message });

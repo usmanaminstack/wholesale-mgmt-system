@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { FileText, Calendar, Filter, PieChart, Info, TrendingUp, BarChart } from 'lucide-react';
+import DateFilter from '../components/DateFilter';
+import { FileText, Calendar, Filter, PieChart, Info, TrendingUp, BarChart, Printer, Eye } from 'lucide-react';
+import { getLocalDateString, getDaysAgoDate } from '../utils/dateUtils';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -28,13 +30,21 @@ ChartJS.register(
 const Reports = () => {
     const [profitData, setProfitData] = useState(null);
     const [trendData, setTrendData] = useState(null);
-    const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [sales, setSales] = useState([]);
+    const [purchases, setPurchases] = useState([]);
+    const [expenses, setExpenses] = useState([]);
+    const [showDetails, setShowDetails] = useState(false);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [startDate, setStartDate] = useState(getLocalDateString(getDaysAgoDate(30)));
+    const [endDate, setEndDate] = useState(getLocalDateString());
 
     useEffect(() => {
         fetchReports();
         fetchTrends();
-    }, [startDate, endDate]);
+        if (showDetails) {
+            fetchDetails();
+        }
+    }, [startDate, endDate, showDetails]);
 
     const fetchReports = async () => {
         const { data } = await api.get(`/reports/profit?startDate=${startDate}&endDate=${endDate}`);
@@ -46,6 +56,28 @@ const Reports = () => {
         setTrendData(data);
     };
 
+    const fetchDetails = async () => {
+        setDetailsLoading(true);
+        try {
+            const [sData, pData, eData] = await Promise.all([
+                api.get(`/reports/sales?startDate=${startDate}&endDate=${endDate}`),
+                api.get(`/reports/purchases?startDate=${startDate}&endDate=${endDate}`),
+                api.get(`/expenses?startDate=${startDate}&endDate=${endDate}`)
+            ]);
+            setSales(sData.data);
+            setPurchases(pData.data);
+            setExpenses(eData.data);
+        } catch (err) {
+            alert("Error loading details: " + err.message);
+        } finally {
+            setDetailsLoading(false);
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
@@ -53,16 +85,16 @@ const Reports = () => {
                     <h1 style={{ fontSize: '1.875rem', fontWeight: '800', letterSpacing: '-0.025em', marginBottom: '8px' }}>Reports & Analytics</h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Review your business performance and profit/loss.</p>
                 </div>
-                <div className="card" style={{ padding: '12px 20px', display: 'flex', gap: '16px', alignItems: 'center', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <Calendar size={18} color="var(--primary)" />
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '8px', border: 'none', backgroundColor: 'transparent', boxShadow: 'none' }} />
-                    </div>
-                    <span style={{ color: 'var(--border)' }}>|</span>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <Calendar size={18} color="var(--primary)" />
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ padding: '8px', border: 'none', backgroundColor: 'transparent', boxShadow: 'none' }} />
-                    </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <DateFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                    />
+                    <button onClick={handlePrint} style={{ backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
+                        <Printer size={18} /> Print
+                    </button>
                 </div>
             </div>
 
@@ -161,7 +193,99 @@ const Reports = () => {
                 </div>
             </div>
 
-            <div className="card" style={{ backgroundColor: '#1e293b', color: 'white', border: 'none' }}>
+            <div className="card" style={{ marginBottom: '40px', padding: 0 }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Detailed Transaction Summary</h3>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        {!showDetails ? (
+                            <button
+                                onClick={() => setShowDetails(true)}
+                                className="primary"
+                                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                            >
+                                <Eye size={16} /> Load Detailed Data
+                            </button>
+                        ) : (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{startDate} to {endDate}</div>
+                        )}
+                    </div>
+                </div>
+                {showDetails && (
+                    <div style={{ overflowX: 'auto' }}>
+                        {detailsLoading ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <div className="spinner" style={{ marginBottom: '12px' }}></div>
+                                Fetching itemized records...
+                            </div>
+                        ) : (
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Description / Entity</th>
+                                        <th>Revenue</th>
+                                        <th>Expense/Cost</th>
+                                        <th>Net Impact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sales.map(s => (
+                                        <tr key={s._id}>
+                                            <td>{new Date(s.saleDate).toLocaleDateString()}</td>
+                                            <td><span style={{ color: 'var(--success)', fontWeight: '600' }}>SALE</span></td>
+                                            <td>{s.customer?.name || s.customerName || 'Walk-in'}</td>
+                                            <td style={{ fontWeight: '600' }}>PKR {s.totalAmount.toLocaleString()}</td>
+                                            <td style={{ color: 'var(--text-muted)' }}>-</td>
+                                            <td style={{ color: 'var(--success)', fontWeight: '700' }}>+{s.totalAmount.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                    {purchases.map(p => (
+                                        <tr key={p._id}>
+                                            <td>{new Date(p.purchaseDate).toLocaleDateString()}</td>
+                                            <td><span style={{ color: 'var(--danger)', fontWeight: '600' }}>PURCHASE</span></td>
+                                            <td>{p.supplier?.name || 'Unknown'}</td>
+                                            <td style={{ color: 'var(--text-muted)' }}>-</td>
+                                            <td style={{ fontWeight: '600' }}>PKR {p.grandTotal.toLocaleString()}</td>
+                                            <td style={{ color: 'var(--danger)', fontWeight: '700' }}>-{p.grandTotal.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                    {expenses.map(e => (
+                                        <tr key={e._id}>
+                                            <td>{new Date(e.expenseDate).toLocaleDateString()}</td>
+                                            <td><span style={{ color: '#f59e0b', fontWeight: '600' }}>EXPENSE</span></td>
+                                            <td>{e.description} ({e.category})</td>
+                                            <td style={{ color: 'var(--text-muted)' }}>-</td>
+                                            <td style={{ fontWeight: '600' }}>PKR {e.amount.toLocaleString()}</td>
+                                            <td style={{ color: 'var(--danger)', fontWeight: '700' }}>-{e.amount.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                    {sales.length === 0 && purchases.length === 0 && expenses.length === 0 && (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No transactions found for this period.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                                <tfoot style={{ backgroundColor: '#f8fafc', fontWeight: '800' }}>
+                                    <tr>
+                                        <td colSpan="3" style={{ textAlign: 'right' }}>PERIOD TOTALS:</td>
+                                        <td style={{ color: 'var(--success)' }}>PKR {profitData?.totalSales?.toLocaleString()}</td>
+                                        <td style={{ color: 'var(--danger)' }}>PKR {((profitData?.totalCOGS || 0) + (profitData?.totalExpenses || 0)).toLocaleString()}</td>
+                                        <td style={{ backgroundColor: '#f0fdf4', color: 'var(--success)' }}>PKR {profitData?.netProfit?.toLocaleString()}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        )}
+                    </div>
+                )}
+                {!showDetails && (
+                    <div style={{ padding: '32px', textAlign: 'center', backgroundColor: '#f8fafc', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        Detailed transaction lists are hidden to save system resources. Click <strong>"Load Detailed Data"</strong> to view.
+                    </div>
+                )}
+            </div>
+
+            <div className="card no-print" style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', marginBottom: '40px' }}>
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0 }}>
                     <Info size={20} color="#38bdf8" /> Accounting Methodology
                 </h3>
@@ -171,6 +295,18 @@ const Reports = () => {
                     <br />• <strong>Net Profit:</strong> Gross Profit minus all operational expenses (Fuel, Rent, Salaries etc.)
                 </p>
             </div>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    .no-print { display: none !important; }
+                    body { background: white !important; }
+                    .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+                    table { border: 1px solid #e2e8f0 !important; }
+                    th, td { border: 1px solid #e2e8f0 !important; }
+                    header, nav, .sidebar { display: none !important; }
+                }
+            `}} />
         </div>
     );
 };

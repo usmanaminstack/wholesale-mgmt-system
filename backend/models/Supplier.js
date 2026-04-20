@@ -8,6 +8,7 @@ const supplierSchema = mongoose.Schema({
     address: { type: String },
     totalPurchases: { type: Number, default: 0 },
     totalPaid: { type: Number, default: 0 },
+    openingBalance: { type: Number, default: 0 },
     outstandingPayable: { type: Number, default: 0 }
 }, { timestamps: true });
 

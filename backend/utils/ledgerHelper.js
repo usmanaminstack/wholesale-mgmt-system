@@ -11,7 +11,15 @@ exports.addLedgerEntry = async ({
 }) => {
     // Get last balance
     const lastEntry = await Ledger.findOne({ entityId, entityType }).sort({ date: -1 });
-    let lastBalance = lastEntry ? lastEntry.balance : 0;
+    let lastBalance = 0;
+    if (lastEntry) {
+        lastBalance = lastEntry.balance;
+    } else {
+        // Fallback to Opening Balance from Customer/Supplier if it's the first entry
+        const EntityModel = entityType === 'Customer' ? require('../models/Customer') : require('../models/Supplier');
+        const entity = await EntityModel.findById(entityId);
+        lastBalance = entity ? (entity.openingBalance || 0) : 0;
+    }
 
     // Customer: Debit (Sale/Increase receivable), Credit (Payment/Decrease receivable)
     // Supplier: Debit (Payment/Decrease payable), Credit (Purchase/Increase payable)

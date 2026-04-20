@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import DateFilter from '../components/DateFilter';
+import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download } from 'lucide-react';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const Sales = () => {
     const [sales, setSales] = useState([]);
@@ -10,6 +14,7 @@ const Sales = () => {
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedSale, setSelectedSale] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [showOutOfStock, setShowOutOfStock] = useState(false);
 
     const [formData, setFormData] = useState({
         customer: '',
@@ -24,13 +29,23 @@ const Sales = () => {
         items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
     });
 
+    const [startDate, setStartDate] = useState(getLocalDateString());
+    const [endDate, setEndDate] = useState(getLocalDateString());
+
     useEffect(() => {
         fetchSales();
+    }, [startDate, endDate]);
+
+    useEffect(() => {
         fetchInitialData();
     }, []);
 
     const fetchSales = async () => {
-        const { data } = await api.get('/sales');
+        let url = '/sales';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        const { data } = await api.get(url);
         setSales(data);
     };
 
@@ -137,16 +152,49 @@ const Sales = () => {
         }
     };
 
+    const downloadPDF = async () => {
+        const element = document.getElementById('receipt-print-area');
+        if (!element) return;
+        try {
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            // Calculate height in mm based on an 80mm width
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [80, 200]
+            });
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`receipt-${selectedSale._id.slice(-8)}.pdf`);
+        } catch (error) {
+            console.error("Could not generate PDF", error);
+            alert("Failed to generate PDF. Please try again.");
+        }
+    };
+
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                     <h1 style={{ fontSize: '1.875rem', fontWeight: '800', letterSpacing: '-0.025em', marginBottom: '4px' }}>Sales</h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Create invoices and track your daily revenue.</p>
                 </div>
-                <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="primary" style={{ padding: '12px 24px' }}>
-                    <Plus size={20} /> New Sale
-                </button>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <DateFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                        onClear={() => { setStartDate(''); setEndDate(''); }}
+                    />
+                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="primary" style={{ padding: '12px 24px' }}>
+                        <Plus size={20} /> New Sale
+                    </button>
+                </div>
             </div>
 
             <div className="card" style={{ padding: 0 }}>
@@ -215,9 +263,15 @@ const Sales = () => {
                     <div className="card" style={{ width: '95%', maxWidth: '900px', maxHeight: '95vh', overflowY: 'auto' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <h3 style={{ margin: 0 }}>{isEditing ? 'Edit Sale Invoice' : 'Create Sale Invoice'}</h3>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button type="button" onClick={() => setFormData({ ...formData, isRetail: true })} style={{ backgroundColor: formData.isRetail ? 'var(--primary)' : '#f1f5f9', color: formData.isRetail ? 'white' : 'var(--text)', fontSize: '0.8rem' }}>Retail</button>
-                                <button type="button" onClick={() => setFormData({ ...formData, isRetail: false })} style={{ backgroundColor: !formData.isRetail ? 'var(--primary)' : '#f1f5f9', color: !formData.isRetail ? 'white' : 'var(--text)', fontSize: '0.8rem' }}>Wholesale</button>
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    <input type="checkbox" id="oos" checked={showOutOfStock} onChange={e => setShowOutOfStock(e.target.checked)} />
+                                    <label htmlFor="oos">Show Out of Stock</label>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button type="button" onClick={() => setFormData({ ...formData, isRetail: true })} style={{ backgroundColor: formData.isRetail ? 'var(--primary)' : '#f1f5f9', color: formData.isRetail ? 'white' : 'var(--text)', fontSize: '0.8rem' }}>Retail</button>
+                                    <button type="button" onClick={() => setFormData({ ...formData, isRetail: false })} style={{ backgroundColor: !formData.isRetail ? 'var(--primary)' : '#f1f5f9', color: !formData.isRetail ? 'white' : 'var(--text)', fontSize: '0.8rem' }}>Wholesale</button>
+                                </div>
                             </div>
                         </div>
 
@@ -280,7 +334,14 @@ const Sales = () => {
                                                 {index === 0 && <label style={{ display: 'block', fontSize: '0.75rem', marginBottom: '4px', fontWeight: '600' }}>Product</label>}
                                                 <select required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)} >
                                                     <option value="">Select Product</option>
-                                                    {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                                                    {products
+                                                        .filter(p => showOutOfStock || p.stockInPieces > 0 || item.product === p._id)
+                                                        .map(p => (
+                                                            <option key={p._id} value={p._id}>
+                                                                {p.name} (Stock: {(p.stockInPieces / (p.piecesPerCarton || 1)).toFixed(1)} Ctn / {p.stockInPieces} Pcs)
+                                                            </option>
+                                                        ))
+                                                    }
                                                 </select>
                                             </div>
                                             <div>
@@ -351,78 +412,82 @@ const Sales = () => {
 
             {showViewModal && selectedSale && (
                 <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card invoice-print-area" style={{ width: '95%', maxWidth: '800px', maxHeight: '95vh', overflowY: 'auto', padding: '40px' }}>
-                        <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '20px' }}>
-                            <button onClick={printInvoice} style={{ backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}><Printer size={18} /> Print</button>
-                            <button onClick={() => setShowViewModal(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X size={24} /></button>
+                    <div className="card" style={{ width: '95%', maxWidth: '400px', maxHeight: '95vh', overflowY: 'auto', padding: '20px' }}>
+                        <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px' }}>
+                            <button onClick={printInvoice} title="Print Invoice" style={{ backgroundColor: '#f1f5f9', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '8px 12px' }}><Printer size={16} /><span className="desktop-only">Print</span></button>
+                            <button onClick={downloadPDF} title="Download PDF" style={{ backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '8px 12px' }}><Download size={16} /><span className="desktop-only">PDF</span></button>
+                            <button onClick={() => setShowViewModal(false)} style={{ background: 'none', color: 'var(--danger)', padding: '8px' }}><X size={20} /></button>
                         </div>
 
-                        <div style={{ textAlign: 'center', marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                            <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px' }} />
-                            <div>
-                                <h1 style={{ margin: 0, color: 'var(--primary)', letterSpacing: '-0.05em', lineHeight: 1 }}>GUDDU TRADERS</h1>
-                                <p style={{ margin: '8px 0', fontSize: '1.2rem', fontWeight: '700' }}>Wholesale Distributor & Cold Drink Distributor</p>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Quality Service • Reliable Supply</p>
+                        {/* POS Receipt Container */}
+                        <div id="receipt-print-area" className="pos-receipt invoice-print-area">
+                            <div className="pos-receipt-header">
+                                <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
+                                <p style={{ margin: '4px 0', fontSize: '11px' }}>Wholesale & Cold Drink Distributor</p>
+                                <p style={{ margin: '0', fontSize: '11px' }}>Contact: Business Rep</p>
                             </div>
-                        </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px', borderBottom: '1px solid var(--border)', paddingBottom: '20px' }}>
-                            <div>
-                                <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.75rem' }}>Bill To:</h4>
-                                <h3 style={{ margin: 0 }}>{selectedSale.customer?.name || selectedSale.customerName || 'Walking Customer'}</h3>
-                                <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>{selectedSale.customer?.phone || 'N/A'}</p>
-                                <p style={{ margin: 0, fontSize: '0.85rem' }}>{selectedSale.customer?.address || 'N/A'}</p>
+                            <div style={{ marginBottom: '12px', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span><strong>Inv:</strong> {selectedSale._id.slice(-8).toUpperCase()}</span>
+                                    <span>{new Date(selectedSale.saleDate).toLocaleDateString()}</span>
+                                </div>
+                                <div style={{ marginTop: '4px' }}>
+                                    <strong>Bill To:</strong> {selectedSale.customer?.name || selectedSale.customerName || 'Walking Customer'}
+                                </div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.75rem' }}>Invoice Details:</h4>
-                                <p style={{ margin: '4px 0', fontSize: '0.85rem' }}><strong>Inv #:</strong> {selectedSale._id.slice(-8).toUpperCase()}</p>
-                                <p style={{ margin: '4px 0', fontSize: '0.85rem' }}><strong>Date:</strong> {new Date(selectedSale.saleDate).toLocaleDateString()}</p>
-                                <p style={{ margin: 0, fontSize: '0.85rem' }}><strong>Type:</strong> {selectedSale.isRetail ? 'Retail' : 'Wholesale'}</p>
-                            </div>
-                        </div>
 
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '32px' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '2px solid var(--text)', textAlign: 'left' }}>
-                                    <th style={{ padding: '12px 0' }}>Item Description</th>
-                                    <th>Qty</th>
-                                    <th>Unit</th>
-                                    <th>Price</th>
-                                    <th style={{ textAlign: 'right' }}>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {selectedSale.items.map((item, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={{ padding: '12px 0', fontWeight: '500' }}>{item.product?.name || 'Deleted Product'}</td>
-                                        <td>{item.quantity}</td>
-                                        <td>{item.unit}</td>
-                                        <td>{item.priceAtSale.toLocaleString()}</td>
-                                        <td style={{ textAlign: 'right', fontWeight: '600' }}>{item.totalPrice.toLocaleString()}</td>
+                            <table className="pos-receipt-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ textAlign: 'left' }}>Item</th>
+                                        <th style={{ textAlign: 'center' }}>Qty</th>
+                                        <th style={{ textAlign: 'right' }}>Total</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {selectedSale.items.map((item, idx) => (
+                                        <tr key={idx}>
+                                            <td style={{ textAlign: 'left' }}>
+                                                {item.product?.customerProductName || item.product?.name || 'Deleted Product'} <br />
+                                                <span style={{ fontSize: '10px', color: '#555' }}>@ {item.priceAtSale.toLocaleString()}</span>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                            <td style={{ textAlign: 'right' }}>{item.totalPrice.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <div style={{ width: '250px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span>Grand Total:</span>
-                                    <span style={{ fontWeight: '700' }}>PKR {selectedSale.totalAmount.toLocaleString()}</span>
+                            <div className="pos-total-section">
+                                <div className="pos-total-row" style={{ fontWeight: 'normal' }}>
+                                    <span>Gross Total</span>
+                                    <span>{selectedSale.totalAmount.toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span>Received:</span>
-                                    <span>PKR {selectedSale.receivedAmount.toLocaleString()}</span>
+                                {(selectedSale.discount || 0) > 0 && (
+                                    <div className="pos-total-row" style={{ fontWeight: 'normal' }}>
+                                        <span>Discount</span>
+                                        <span>-{(selectedSale.discount || 0).toLocaleString()}</span>
+                                    </div>
+                                )}
+                                <div className="pos-total-row" style={{ fontSize: '14px', margin: '4px 0' }}>
+                                    <span>Net Total (PKR)</span>
+                                    <span>{(selectedSale.totalAmount - (selectedSale.discount || 0)).toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '2px solid var(--text)', fontSize: '1.1rem' }}>
-                                    <span style={{ fontWeight: '800' }}>Balance:</span>
-                                    <span style={{ fontWeight: '800', color: selectedSale.balanceAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {selectedSale.balanceAmount.toLocaleString()}</span>
+                                <div className="pos-total-row" style={{ fontWeight: 'normal' }}>
+                                    <span>Received</span>
+                                    <span>{selectedSale.receivedAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="pos-total-row">
+                                    <span>Balance Due</span>
+                                    <span>{selectedSale.balanceAmount.toLocaleString()}</span>
                                 </div>
                             </div>
-                        </div>
 
-                        <div style={{ marginTop: '60px', textAlign: 'center', borderTop: '1px dashed var(--border)', paddingTop: '20px' }}>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Thank you for your business! Please visit again.</p>
+                            <div className="pos-footer">
+                                Thank you for your business!
+                                <br />Please visit again.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -433,9 +498,10 @@ const Sales = () => {
               @media print {
                 body * { visibility: hidden; }
                 .invoice-print-area, .invoice-print-area * { visibility: visible; }
-                .invoice-print-area { position: absolute; left: 0; top: 0; width: 100% !important; max-width: none !important; box-shadow: none !important; }
+                .invoice-print-area { position: absolute; left: 0; top: 0; width: 300px !important; margin: 0; box-shadow: none !important; border: none !important; }
                 .no-print { display: none !important; }
                 .card { border: none !important; }
+                @page { size: 80mm 200mm; margin: 0; }
               }
               @media (max-width: 768px) {
                 .invoice-row { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }

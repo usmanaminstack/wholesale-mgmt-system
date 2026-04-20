@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import DateFilter from '../components/DateFilter';
 import { Plus, Trash, Save, ShoppingCart, Truck, Edit, Trash2, Calendar, X } from 'lucide-react';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const Purchases = () => {
     const [purchases, setPurchases] = useState([]);
@@ -15,16 +17,26 @@ const Purchases = () => {
         paymentType: 'Cash',
         paidAmount: 0,
         items: [{ product: '', quantityInCartons: 1, costPerCarton: 0, totalCost: 0 }],
-        purchaseDate: new Date().toISOString().split('T')[0]
+        purchaseDate: getLocalDateString()
     });
+
+    const [startDate, setStartDate] = useState(getLocalDateString());
+    const [endDate, setEndDate] = useState(getLocalDateString());
 
     useEffect(() => {
         fetchPurchases();
+    }, [startDate, endDate]);
+
+    useEffect(() => {
         fetchInitialData();
     }, []);
 
     const fetchPurchases = async () => {
-        const { data } = await api.get('/purchases');
+        let url = '/purchases';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        const { data } = await api.get(url);
         setPurchases(data);
     };
 
@@ -113,18 +125,27 @@ const Purchases = () => {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                     <h1 style={{ fontSize: '1.875rem', fontWeight: '800', letterSpacing: '-0.025em', marginBottom: '4px' }}>Restock Inventory</h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Record bulk purchases and update supplier ledgers.</p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="primary"
-                    style={{ padding: '12px 24px' }}
-                >
-                    <Plus size={20} /> New Purchase
-                </button>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <DateFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                        onClear={() => { setStartDate(''); setEndDate(''); }}
+                    />
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="primary"
+                        style={{ padding: '12px 24px' }}
+                    >
+                        <Plus size={20} /> New Purchase
+                    </button>
+                </div>
             </div>
 
             <div className="card" style={{ padding: 0 }}>

@@ -12,6 +12,7 @@ exports.getCustomers = async (req, res) => {
 exports.createCustomer = async (req, res) => {
     try {
         const customer = new Customer(req.body);
+        customer.outstandingReceivable = (customer.openingBalance || 0);
         const createdCustomer = await customer.save();
         res.status(201).json(createdCustomer);
     } catch (error) {
@@ -24,6 +25,7 @@ exports.updateCustomer = async (req, res) => {
         const customer = await Customer.findById(req.params.id);
         if (customer) {
             Object.assign(customer, req.body);
+            customer.outstandingReceivable = (customer.openingBalance || 0) + (customer.totalSales || 0) - (customer.totalReceived || 0);
             const updatedCustomer = await customer.save();
             res.json(updatedCustomer);
         } else {

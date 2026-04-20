@@ -29,6 +29,7 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/expenses', require('./routes/expenseRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/returns', require('./routes/saleReturnRoutes'));
+app.use('/api/cash', require('./routes/cashRoutes'));
 
 const PORT = parseInt(process.env.PORT) || 5000;
 

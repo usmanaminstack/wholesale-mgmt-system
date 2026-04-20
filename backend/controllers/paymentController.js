@@ -60,7 +60,16 @@ exports.createPayment = async (req, res) => {
 
 exports.getPayments = async (req, res) => {
     try {
-        const payments = await Payment.find({}).sort({ paymentDate: -1 });
+        const { startDate, endDate } = req.query;
+        let query = {};
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.paymentDate = { $gte: start, $lte: end };
+        }
+        const payments = await Payment.find(query).sort({ paymentDate: -1 });
         res.json(payments);
     } catch (error) {
         res.status(500).json({ message: error.message });

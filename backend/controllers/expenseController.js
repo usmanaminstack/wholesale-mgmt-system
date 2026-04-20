@@ -12,7 +12,16 @@ exports.createExpense = async (req, res) => {
 
 exports.getExpenses = async (req, res) => {
     try {
-        const expenses = await Expense.find({}).sort({ expenseDate: -1 });
+        const { startDate, endDate } = req.query;
+        let query = {};
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.expenseDate = { $gte: start, $lte: end };
+        }
+        const expenses = await Expense.find(query).sort({ expenseDate: -1 });
         res.json(expenses);
     } catch (error) {
         res.status(500).json({ message: error.message });

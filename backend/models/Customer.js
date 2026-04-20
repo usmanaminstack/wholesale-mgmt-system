@@ -6,6 +6,7 @@ const customerSchema = mongoose.Schema({
     address: { type: String },
     totalSales: { type: Number, default: 0 },
     totalReceived: { type: Number, default: 0 },
+    openingBalance: { type: Number, default: 0 },
     outstandingReceivable: { type: Number, default: 0 }
 }, { timestamps: true });
 

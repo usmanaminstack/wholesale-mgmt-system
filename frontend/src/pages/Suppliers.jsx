@@ -8,7 +8,7 @@ const Suppliers = () => {
     const [showLedgerModal, setShowLedgerModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [ledger, setLedger] = useState([]);
-    const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', address: '', openingBalance: '' });
     const [paymentData, setPaymentData] = useState({ amount: '', method: 'Cash', note: '' });
     const [searchTerm, setSearchTerm] = useState('');
     const [loadingLedger, setLoadingLedger] = useState(false);
@@ -67,7 +67,7 @@ const Suppliers = () => {
         try {
             await api.post('/suppliers', formData);
             setShowModal(false);
-            setFormData({ name: '', phone: '', address: '' });
+            setFormData({ name: '', phone: '', address: '', openingBalance: '' });
             fetchSuppliers();
         } catch (err) {
             alert(err.message);
@@ -144,6 +144,10 @@ const Suppliers = () => {
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '24px' }}>
                             <input type="text" placeholder="Company / Supplier Name" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                             <input type="text" placeholder="Phone Number" required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--accent)' }}>Opening Balance (Previous Payable)</label>
+                                <input type="number" placeholder="e.g. 10000" value={formData.openingBalance} onChange={e => setFormData({ ...formData, openingBalance: e.target.value })} />
+                            </div>
                             <textarea placeholder="Warehouse Address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} style={{ height: '80px' }} />
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <button type="submit" className="primary" style={{ flex: 1 }}>Save Supplier</button>

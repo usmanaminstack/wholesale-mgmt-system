@@ -5,9 +5,11 @@ import { Plus, Edit2, Package, Search, ChevronRight, X, AlertTriangle, Trash2 } 
 const Inventory = () => {
     const [products, setProducts] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [showAdjustModal, setShowAdjustModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [showInactive, setShowInactive] = useState(false);
+    const [adjustmentData, setAdjustmentData] = useState({ pieces: 0, reason: '' });
     const [formData, setFormData] = useState({
         name: '',
         category: '',
@@ -16,6 +18,7 @@ const Inventory = () => {
         costPricePerPiece: '',
         pricePerCarton: '',
         pricePerPiece: '',
+        customerProductName: '',
         lowStockThreshold: 10
     });
 
@@ -29,6 +32,7 @@ const Inventory = () => {
             costPricePerPiece: p.costPricePerPiece || (p.pricePerPiece * 0.9),
             pricePerCarton: p.pricePerCarton,
             pricePerPiece: p.pricePerPiece,
+            customerProductName: p.customerProductName || '',
             lowStockThreshold: p.lowStockThreshold
         });
         setShowModal(true);
@@ -39,6 +43,18 @@ const Inventory = () => {
     const fetchProducts = async () => {
         const { data } = await api.get('/products');
         setProducts(data);
+    };
+
+    const handleAdjustment = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post(`/products/${editingProduct._id}/adjust`, { adjustment: adjustmentData.pieces });
+            setShowAdjustModal(false);
+            setAdjustmentData({ pieces: 0, reason: '' });
+            fetchProducts();
+        } catch (err) {
+            alert(err.message);
+        }
     };
 
     const handleDeleteProduct = async (id) => {
@@ -59,7 +75,7 @@ const Inventory = () => {
             else await api.post('/products', formData);
             setShowModal(false);
             setEditingProduct(null);
-            setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', lowStockThreshold: 10 });
+            setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', customerProductName: '', lowStockThreshold: 10 });
             fetchProducts();
         } catch (err) { alert(err.message); }
     };
@@ -127,9 +143,13 @@ const Inventory = () => {
                                     <td><span style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', borderRadius: '50px', fontSize: '0.75rem', color: 'var(--secondary)' }}>{p.category}</span></td>
                                     <td className="desktop-only">{p.piecesPerCarton} <span style={{ color: 'var(--text-muted)' }}>pcs</span></td>
                                     <td className="desktop-only">
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--accent)' }}>
-                                            <div><span style={{ color: 'var(--text-muted)' }}>C:</span> {p.costPricePerCarton}</div>
-                                            <div><span style={{ color: 'var(--text-muted)' }}>P:</span> {p.costPricePerPiece}</div>
+                                        <div style={{ fontSize: '0.85rem' }}>
+                                            <div style={{ color: 'var(--accent)', fontWeight: '600' }} title="Weighted Average Cost">
+                                                <span style={{ color: 'var(--text-muted)' }}>Avg C:</span> {p.costPricePerCarton?.toFixed(1)}
+                                            </div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }} title="Most Recent Purchase Rate">
+                                                Last: {p.lastPurchasePricePerCarton || '-'}
+                                            </div>
                                         </div>
                                     </td>
                                     <td>
@@ -155,6 +175,7 @@ const Inventory = () => {
                                         </div>
                                     </td>
                                     <td style={{ display: 'flex', gap: '8px' }}>
+                                        <button onClick={() => { setEditingProduct(p); setAdjustmentData({ pieces: 0, reason: '' }); setShowAdjustModal(true); }} style={{ background: 'none', color: 'var(--success)', padding: '6px' }} title="Adjust Stock"><Package size={16} /></button>
                                         <button onClick={() => handleEdit(p)} style={{ background: 'none', color: 'var(--primary)', padding: '6px' }}><Edit2 size={16} /></button>
                                         <button onClick={() => handleDeleteProduct(p._id)} style={{ background: 'none', color: 'var(--danger)', padding: '6px' }}><Trash2 size={16} /></button>
                                     </td>
@@ -186,6 +207,10 @@ const Inventory = () => {
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px' }}>Pieces/Carton</label>
                                     <input type="number" required value={formData.piecesPerCarton} onChange={(e) => setFormData({ ...formData, piecesPerCarton: e.target.value })} />
                                 </div>
+                                <div style={{ gridColumn: 'span 2' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px' }}>Customer Front Name (for Invoice)</label>
+                                    <input type="text" value={formData.customerProductName} onChange={(e) => setFormData({ ...formData, customerProductName: e.target.value })} placeholder="e.g. Pepsi Jumbo" />
+                                </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', gridColumn: 'span 2' }}>
                                     <div>
                                         <label style={{ fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px', display: 'block' }}>Cost Price (Carton)</label>
@@ -214,6 +239,47 @@ const Inventory = () => {
                             <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                                 <button type="submit" className="primary" style={{ flex: 1 }}>{editingProduct ? 'Update Product' : 'Create Product'}</button>
                                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9' }}>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {showAdjustModal && (
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+                    <div className="card" style={{ width: '90%', maxWidth: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0 }}>Stock Adjustment: {editingProduct?.name}</h3>
+                            <button onClick={() => setShowAdjustModal(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X size={20} /></button>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                            Current Stock: <strong>{editingProduct?.stockInPieces} pieces</strong> (≈ {(editingProduct?.stockInPieces / editingProduct?.piecesPerCarton).toFixed(1)} Cartons)
+                        </p>
+                        <form onSubmit={handleAdjustment} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px' }}>Adjustment Pieces</label>
+                                <input
+                                    type="number"
+                                    required
+                                    value={adjustmentData.pieces}
+                                    onChange={e => setAdjustmentData({ ...adjustmentData, pieces: parseInt(e.target.value) })}
+                                    placeholder="Enter positive to add, negative to remove"
+                                />
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                    Example: 12 to add 12 pieces, -6 to remove 6 pieces.
+                                </p>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px' }}>Reason (Optional)</label>
+                                <textarea
+                                    value={adjustmentData.reason}
+                                    onChange={e => setAdjustmentData({ ...adjustmentData, reason: e.target.value })}
+                                    placeholder="e.g. Damage, Expired, Manual Correction"
+                                    style={{ height: '80px' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                                <button type="submit" className="primary" style={{ flex: 1 }}>Apply Adjustment</button>
+                                <button type="button" onClick={() => setShowAdjustModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9' }}>Cancel</button>
                             </div>
                         </form>
                     </div>

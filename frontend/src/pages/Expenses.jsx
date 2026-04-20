@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import DateFilter from '../components/DateFilter';
 import { Plus, Receipt, Search, Filter, Trash2, PiggyBank, Edit2, X } from 'lucide-react';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const Expenses = () => {
     const [expenses, setExpenses] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingExpense, setEditingExpense] = useState(null);
-    const [formData, setFormData] = useState({ category: '', amount: 0, description: '', expenseDate: new Date().toISOString().split('T')[0] });
+    const [formData, setFormData] = useState({ category: '', amount: 0, description: '', paymentMethod: 'Cash', expenseDate: getLocalDateString() });
 
-    useEffect(() => { fetchExpenses(); }, []);
+    const [startDate, setStartDate] = useState(getLocalDateString());
+    const [endDate, setEndDate] = useState(getLocalDateString());
+
+    useEffect(() => { fetchExpenses(); }, [startDate, endDate]);
 
     const fetchExpenses = async () => {
-        const { data } = await api.get('/expenses');
+        let url = '/expenses';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        const { data } = await api.get(url);
         setExpenses(data);
     };
 
@@ -66,9 +75,18 @@ const Expenses = () => {
                     <h1 style={{ fontSize: '1.875rem', fontWeight: '800', letterSpacing: '-0.025em', marginBottom: '4px' }}>Business Expenses</h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Record utility bills, fuel, rent, and other operational costs.</p>
                 </div>
-                <button onClick={() => setShowModal(true)} className="primary" style={{ padding: '12px 24px' }}>
-                    <Plus size={20} /> Add Expense
-                </button>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <DateFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                        onClear={() => { setStartDate(''); setEndDate(''); }}
+                    />
+                    <button onClick={() => setShowModal(true)} className="primary" style={{ padding: '12px 24px' }}>
+                        <Plus size={20} /> Add Expense
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '32px' }}>
@@ -89,6 +107,7 @@ const Expenses = () => {
                                 <th>Date</th>
                                 <th>Category</th>
                                 <th>Amount</th>
+                                <th>Method</th>
                                 <th>Description</th>
                                 <th>Actions</th>
                             </tr>
@@ -111,6 +130,7 @@ const Expenses = () => {
                                         </span>
                                     </td>
                                     <td style={{ fontWeight: '700', color: 'var(--danger)' }}>PKR {e.amount?.toLocaleString()}</td>
+                                    <td><span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{e.paymentMethod || 'Cash'}</span></td>
                                     <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{e.description || 'No description provided'}</td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -161,6 +181,15 @@ const Expenses = () => {
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px' }}>Amount Spent</label>
                                 <input type="number" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '6px' }}>Payment Method</label>
+                                <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}>
+                                    <option value="Cash">Cash in Hand</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Cheque">Cheque</option>
+                                </select>
                             </div>
 
                             <div>

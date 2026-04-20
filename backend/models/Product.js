@@ -2,10 +2,13 @@ const mongoose = require('mongoose');
 
 const productSchema = mongoose.Schema({
     name: { type: String, required: true },
+    customerProductName: { type: String }, // For invoices (e.g. "Pepsi Jumbo")
     category: { type: String },
     piecesPerCarton: { type: Number, required: true },
     costPricePerCarton: { type: Number, default: 0 },
     costPricePerPiece: { type: Number, default: 0 },
+    lastPurchasePricePerCarton: { type: Number, default: 0 },
+    lastPurchasePricePerPiece: { type: Number, default: 0 },
     pricePerCarton: { type: Number, required: true },
     pricePerPiece: { type: Number, required: true },
     stockInPieces: { type: Number, default: 0 },

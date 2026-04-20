@@ -26,11 +26,30 @@ exports.createPurchase = async (req, res) => {
 
         const savedPurchase = await purchase.save();
 
-        // Update Stock
+        // Update Stock & Average Cost
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                product.stockInPieces += (item.quantityInCartons * product.piecesPerCarton);
+                const oldQty = product.stockInPieces;
+                const oldCost = product.costPricePerPiece;
+                const newQty = item.quantityInCartons * product.piecesPerCarton;
+                const newTotalCost = item.totalCost;
+
+                const totalQty = oldQty + newQty;
+                if (totalQty > 0) {
+                    const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
+                    product.costPricePerPiece = newAvgCostPerPiece;
+                    product.costPricePerCarton = newAvgCostPerPiece * product.piecesPerCarton;
+                } else if (totalQty === 0 && newQty > 0) {
+                    // If it was negative and now exactly zero, use the new purchase rate
+                    product.costPricePerCarton = item.costPerCarton;
+                    product.costPricePerPiece = item.costPerCarton / product.piecesPerCarton;
+                }
+
+                product.lastPurchasePricePerCarton = item.costPerCarton;
+                product.lastPurchasePricePerPiece = item.costPerCarton / product.piecesPerCarton;
+
+                product.stockInPieces = totalQty;
                 await product.save();
             }
         }
@@ -74,7 +93,16 @@ exports.createPurchase = async (req, res) => {
 
 exports.getPurchases = async (req, res) => {
     try {
-        const purchases = await Purchase.find({}).populate('supplier').sort({ purchaseDate: -1 });
+        const { startDate, endDate } = req.query;
+        let query = {};
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.purchaseDate = { $gte: start, $lte: end };
+        }
+        const purchases = await Purchase.find(query).populate('supplier').sort({ purchaseDate: -1 });
         res.json(purchases);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -123,11 +151,23 @@ exports.updatePurchase = async (req, res) => {
         }
         const balanceAmount = grandTotal - paidAmount;
 
-        // 4. Apply New Stock
+        // 4. Apply New Stock & Re-calc Average Cost
+        // Note: For simplicity in update, we treat the removal as subtracting from value and addition as adding to value
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                product.stockInPieces += (item.quantityInCartons * product.piecesPerCarton);
+                const oldQty = product.stockInPieces;
+                const oldCost = product.costPricePerPiece;
+                const newQty = item.quantityInCartons * product.piecesPerCarton;
+                const newTotalCost = item.totalCost;
+
+                const totalQty = oldQty + newQty;
+                if (totalQty > 0) {
+                    const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
+                    product.costPricePerPiece = newAvgCostPerPiece;
+                    product.costPricePerCarton = newAvgCostPerPiece * product.piecesPerCarton;
+                }
+                product.stockInPieces = totalQty;
                 await product.save();
             }
         }
@@ -185,11 +225,23 @@ exports.deletePurchase = async (req, res) => {
         const purchase = await Purchase.findById(req.params.id);
         if (!purchase) return res.status(404).json({ message: 'Purchase not found' });
 
-        // 1. Revert Stock
+        // 1. Revert Stock & Adjust Average Cost
         for (const item of purchase.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                product.stockInPieces -= (item.quantityInCartons * product.piecesPerCarton);
+                const currentQty = product.stockInPieces;
+                const currentCost = product.costPricePerPiece;
+                const removeQty = item.quantityInCartons * product.piecesPerCarton;
+                const removeValue = item.totalCost;
+
+                const newQty = currentQty - removeQty;
+                if (newQty > 0) {
+                    // Try to back-calculate the previous average cost
+                    const newValue = (currentQty * currentCost) - removeValue;
+                    product.costPricePerPiece = newValue / newQty;
+                    product.costPricePerCarton = product.costPricePerPiece * product.piecesPerCarton;
+                }
+                product.stockInPieces = newQty;
                 await product.save();
             }
         }

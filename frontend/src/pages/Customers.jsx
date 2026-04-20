@@ -8,7 +8,7 @@ const Customers = () => {
     const [showLedgerModal, setShowLedgerModal] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [ledger, setLedger] = useState([]);
-    const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', address: '', openingBalance: '' });
     const [paymentData, setPaymentData] = useState({ amount: '', method: 'Cash', note: '' });
     const [searchTerm, setSearchTerm] = useState('');
     const [loadingLedger, setLoadingLedger] = useState(false);
@@ -67,7 +67,7 @@ const Customers = () => {
         e.preventDefault();
         await api.post('/customers', formData);
         setShowModal(false);
-        setFormData({ name: '', phone: '', address: '' });
+        setFormData({ name: '', phone: '', address: '', openingBalance: '' });
         fetchCustomers();
     };
 
@@ -141,6 +141,10 @@ const Customers = () => {
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
                             <input type="text" placeholder="Full Name" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                             <input type="text" placeholder="Phone Number" required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--primary)' }}>Opening Balance (Previous Debt)</label>
+                                <input type="number" placeholder="e.g. 5000" value={formData.openingBalance} onChange={e => setFormData({ ...formData, openingBalance: e.target.value })} />
+                            </div>
                             <textarea placeholder="Shop Address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} style={{ height: '80px' }} />
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <button type="submit" className="primary" style={{ flex: 1 }}>Add Customer</button>

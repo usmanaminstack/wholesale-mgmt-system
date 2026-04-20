@@ -9,7 +9,8 @@ import {
   CreditCard,
   Receipt,
   BarChart3,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -103,6 +104,29 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <div style={{ padding: '24px', borderTop: '1px solid #1e293b' }}>
           <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--sidebar-text)' }}>v1.0.0 Business Edition</p>
         </div>
+      </div>
+
+      <div className="bottom-nav mobile-only">
+        <NavLink to="/" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
+          <LayoutDashboard size={24} />
+          <span>Dash</span>
+        </NavLink>
+        <NavLink to="/sales" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
+          <ShoppingCart size={24} />
+          <span>Sales</span>
+        </NavLink>
+        <NavLink to="/inventory" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
+          <Package size={24} />
+          <span>Stock</span>
+        </NavLink>
+        <NavLink to="/purchases" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
+          <TrendingUp size={24} />
+          <span>Buy</span>
+        </NavLink>
+        <button className="bottom-nav-item" onClick={(e) => { e.preventDefault(); toggleSidebar(); }}>
+          <Menu size={24} />
+          <span>More</span>
+        </button>
       </div>
 
       <style dangerouslySetInnerHTML={{

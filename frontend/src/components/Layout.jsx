@@ -31,14 +31,7 @@ const Layout = () => {
                     zIndex: 30
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <button
-                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="mobile-only"
-                            style={{ background: 'none', padding: 0, color: 'var(--text)' }}
-                        >
-                            <Menu size={24} />
-                        </button>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>Management System</h2>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: 'var(--primary)' }}>Guddu Traders</h2>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -61,8 +54,8 @@ const Layout = () => {
           .main-content { padding-left: 260px !important; }
         }
         @media (max-width: 768px) {
-          main { padding: 16px !important; }
-          header { padding: 0 16px !important; }
+          main { padding: 12px !important; padding-bottom: 80px !important; }
+          header { padding: 0 12px !important; }
         }
       `}} />
         </div>

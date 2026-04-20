@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
+import DateFilter from '../components/DateFilter';
 import {
     TrendingUp,
     Receipt,
@@ -11,29 +13,56 @@ import {
     Activity,
     Package
 } from 'lucide-react';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState(getLocalDateString());
+    const [endDate, setEndDate] = useState(getLocalDateString());
+    const [showAdjustModal, setShowAdjustModal] = useState(false);
+    const [adjustData, setAdjustData] = useState({ accountType: 'Cash', amount: '', reason: '', isAdd: true });
+
+    const isToday = startDate === endDate && startDate === getLocalDateString();
+    const periodLabel = isToday ? "Today's" : "Period";
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [sData, aData] = await Promise.all([
+                api.get(`/reports/dashboard?startDate=${startDate}&endDate=${endDate}`),
+                api.get(`/reports/activity?startDate=${startDate}&endDate=${endDate}`)
+            ]);
+            setStats(sData.data);
+            setActivities(aData.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [sData, aData] = await Promise.all([
-                    api.get('/reports/dashboard'),
-                    api.get('/reports/activity')
-                ]);
-                setStats(sData.data);
-                setActivities(aData.data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
-    }, []);
+    }, [startDate, endDate]);
+
+    const handleAdjustSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const finalAmount = adjustData.isAdd ? parseFloat(adjustData.amount) : -parseFloat(adjustData.amount);
+            await api.post('/cash/adjust', {
+                accountType: adjustData.accountType,
+                amount: finalAmount,
+                reason: adjustData.reason
+            });
+            setShowAdjustModal(false);
+            setAdjustData({ accountType: 'Cash', amount: '', reason: '', isAdd: true });
+            fetchData(); // Refresh balances
+        } catch (err) {
+            alert(err.response?.data?.message || err.message);
+        }
+    };
 
     if (loading) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
@@ -70,12 +99,20 @@ const Dashboard = () => {
 
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                     <h1 style={{ fontSize: '1.875rem', fontWeight: '800', letterSpacing: '-0.025em', marginBottom: '8px' }}>Guddu Traders</h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Wholesale Distributor & Cold Drink Distributor</p>
                 </div>
-                <img src="/logo.png" alt="Guddu Traders" style={{ width: '64px', height: '64px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} />
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <DateFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                    />
+                    <img src="/logo.png" alt="Guddu Traders" style={{ width: '64px', height: '64px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', display: 'none' }} />
+                </div>
             </div>
 
             <div style={{
@@ -84,9 +121,9 @@ const Dashboard = () => {
                 gap: '20px',
                 marginBottom: '40px'
             }}>
-                <StatCard title="Today's Sales" value={stats?.todaySales} icon={TrendingUp} color="#3b82f6" trend={12} />
-                <StatCard title="Today's Net Profit" value={stats?.todayProfit} icon={Wallet} color="#10b981" />
-                <StatCard title="Today's Expenses" value={stats?.todayExpenses} icon={Receipt} color="#ef4444" trend={-5} />
+                <StatCard title={`${periodLabel} Sales`} value={stats?.todaySales} icon={TrendingUp} color="#3b82f6" trend={isToday ? 12 : null} />
+                <StatCard title={`${periodLabel} Net Profit`} value={stats?.todayProfit} icon={Wallet} color="#10b981" />
+                <StatCard title={`${periodLabel} Expenses`} value={stats?.todayExpenses} icon={Receipt} color="#ef4444" trend={isToday ? -5 : null} />
                 <StatCard title="Total Receivable" value={stats?.totalReceivable} icon={ArrowDownRight} color="#6366f1" />
                 <StatCard title="Total Payable" value={stats?.totalPayable} icon={ArrowUpRight} color="#f59e0b" />
             </div>
@@ -94,7 +131,7 @@ const Dashboard = () => {
                 <div className="card" style={{ borderLeft: '4px solid var(--primary)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                         <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '8px' }}><Package size={20} color="var(--primary)" /></div>
-                        <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today's Sales</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{periodLabel} Sales</h3>
                     </div>
                     <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800' }}>PKR {stats?.todaySales?.toLocaleString()}</h2>
                 </div>
@@ -102,14 +139,33 @@ const Dashboard = () => {
                 <div className="card" style={{ borderLeft: '4px solid var(--success)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                         <div style={{ padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '8px' }}><TrendingUp size={20} color="var(--success)" /></div>
-                        <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today's Profit</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isToday ? "Today's Profit" : "Selected Profit"}</h3>
                     </div>
                     <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800', color: 'var(--success)' }}>PKR {stats?.todayProfit?.toLocaleString()}</h2>
                 </div>
 
-                <div className="card" style={{ borderLeft: '4px solid var(--secondary)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                        <div style={{ padding: '8px', backgroundColor: '#f8fafc', borderRadius: '8px' }}><AlertTriangle size={20} color="var(--secondary)" /></div>
+                <div className="card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cash in Hand</h3>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button onClick={() => { setAdjustData({ ...adjustData, accountType: 'Cash' }); setShowAdjustModal(true); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>Adjust</button>
+                            <Wallet size={18} color="rgba(255,255,255,0.8)" />
+                        </div>
+                    </div>
+                    <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800' }}>PKR {stats?.cashInHand?.toLocaleString() || 0}</h2>
+                </div>
+                <div className="card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', color: 'white', border: 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cash in Bank</h3>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button onClick={() => { setAdjustData({ ...adjustData, accountType: 'Bank' }); setShowAdjustModal(true); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>Adjust</button>
+                            <TrendingUp size={18} color="rgba(255,255,255,0.8)" />
+                        </div>
+                    </div>
+                    <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800' }}>PKR {stats?.cashInBank?.toLocaleString() || 0}</h2>
+                </div>
+                <div className="card" style={{ border: 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inventory Alerts</h3>
                     </div>
                     <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800' }}>{stats?.lowStockCount} <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: '400' }}>Low Stock</span></h2>
@@ -182,14 +238,17 @@ const Dashboard = () => {
                     overflow: 'hidden'
                 }}>
                     <div style={{ position: 'relative', zIndex: 1 }}>
-                        <h3 style={{ marginBottom: '8px', opacity: 0.9 }}>Net Liquidity Position</h3>
-                        <p style={{ fontSize: '0.9rem', opacity: 0.7, marginBottom: '32px' }}>Total Receivables - Total Payables</p>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '1.2rem', opacity: 0.8 }}>PKR</span>
-                            <h2 style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0 }}>
-                                {Math.abs(stats?.netPosition)?.toLocaleString()}
+                        <div className="card" style={{ background: 'linear-gradient(135deg, var(--success) 0%, #15803d 100%)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '160px', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.2 }}>
+                                <TrendingUp size={120} />
+                            </div>
+                            <span style={{ fontSize: '0.875rem', fontWeight: '600', opacity: 0.9, marginBottom: '8px', display: 'block' }}>{periodLabel} NET PROFIT</span>
+                            <h2 style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, letterSpacing: '-0.05em' }}>
+                                PKR {stats?.todayProfit?.toLocaleString()}
                             </h2>
+                            <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
+                                <Link to="/reports" style={{ color: 'white', fontSize: '0.75rem', fontWeight: '700', textDecoration: 'underline', opacity: 0.9 }}>View Complete Report & Analytics →</Link>
+                            </div>
                         </div>
                         <p style={{ fontSize: '0.9rem', fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>
                             {stats?.netPosition >= 0 ? 'Surplus (Positive)' : 'Deficit (Debt)'}
@@ -288,6 +347,32 @@ const Dashboard = () => {
                 </div>
             )}
 
+            {showAdjustModal && (
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+                    <div className="card" style={{ width: '90%', maxWidth: '400px', animation: 'scaleIn 0.2s ease-out' }}>
+                        <h3 style={{ marginBottom: '20px' }}>Adjust {adjustData.accountType} Balance</h3>
+                        <form onSubmit={handleAdjustSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+                                <button type="button" onClick={() => setAdjustData({ ...adjustData, isAdd: true })} style={{ flex: 1, backgroundColor: adjustData.isAdd ? 'var(--success)' : 'transparent', color: adjustData.isAdd ? 'white' : 'var(--text)', border: 'none', padding: '8px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700' }}>ADD (+)</button>
+                                <button type="button" onClick={() => setAdjustData({ ...adjustData, isAdd: false })} style={{ flex: 1, backgroundColor: !adjustData.isAdd ? 'var(--danger)' : 'transparent', color: !adjustData.isAdd ? 'white' : 'var(--text)', border: 'none', padding: '8px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '700' }}>MINUS (-)</button>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '4px' }}>Amount (PKR)</label>
+                                <input type="number" required value={adjustData.amount} onChange={e => setAdjustData({ ...adjustData, amount: e.target.value })} autoFocus />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '4px' }}>Reason / Description</label>
+                                <textarea required value={adjustData.reason} onChange={e => setAdjustData({ ...adjustData, reason: e.target.value })} placeholder="e.g. Initial balance correction, Petty cash add..." style={{ height: '80px' }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                <button type="submit" className="primary" style={{ flex: 1 }}>Confirm Adjustment</button>
+                                <button type="button" onClick={() => setShowAdjustModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9' }}>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <style dangerouslySetInnerHTML={{
                 __html: `
               @media (max-width: 900px) {
@@ -295,6 +380,7 @@ const Dashboard = () => {
               }
               .loader { font-weight: 600; color: var(--primary); animation: pulse 1.5s infinite; }
               @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+              @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
             `}} />
         </div>
     );

@@ -12,6 +12,7 @@ exports.getSuppliers = async (req, res) => {
 exports.createSupplier = async (req, res) => {
     try {
         const supplier = new Supplier(req.body);
+        supplier.outstandingPayable = (supplier.openingBalance || 0);
         const createdSupplier = await supplier.save();
         res.status(201).json(createdSupplier);
     } catch (error) {
@@ -24,6 +25,7 @@ exports.updateSupplier = async (req, res) => {
         const supplier = await Supplier.findById(req.params.id);
         if (supplier) {
             Object.assign(supplier, req.body);
+            supplier.outstandingPayable = (supplier.openingBalance || 0) + (supplier.totalPurchases || 0) - (supplier.totalPaid || 0);
             const updatedSupplier = await supplier.save();
             res.json(updatedSupplier);
         } else {
