@@ -464,50 +464,45 @@ const Sales = () => {
 
                         <div id="receipt-print-area" className="pos-receipt">
                             <div className="pos-receipt-header">
+                                <div style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: '800', letterSpacing: '2px', marginBottom: '8px' }}>OFFICIAL INVOICE</div>
                                 <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
-                                <div className="pos-receipt-subtitle">Wholesale & Retail Distributor</div>
-                                <div style={{ fontSize: '10px', marginTop: '4px' }}>
+                                <div className="pos-receipt-subtitle">Premium Cold Drink Wholesale</div>
+                                <div style={{ fontSize: '11px', marginTop: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
                                     Main Bazar Road, Guddu Trader Shop <br />
                                     Phone: 0300-1234567 | 0311-7654321
                                 </div>
                             </div>
 
-                            <div style={{ marginBottom: '15px', borderBottom: '1px solid #000', paddingBottom: '10px' }}>
+                            <div style={{ marginBottom: '20px' }}>
                                 <div className="pos-receipt-info">
-                                    <span><strong>INVOICE NO:</strong></span>
-                                    <span>#{selectedSale._id.slice(-6).toUpperCase()}</span>
+                                    <span>INVOICE NO:</span>
+                                    <span style={{ fontWeight: '800' }}>#{selectedSale._id.slice(-6).toUpperCase()}</span>
                                 </div>
                                 <div className="pos-receipt-info">
-                                    <span><strong>DATE:</strong></span>
-                                    <span>{new Date(selectedSale.saleDate).toLocaleDateString()} {new Date(selectedSale.saleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span>DATE:</span>
+                                    <span>{new Date(selectedSale.saleDate).toLocaleDateString()}</span>
                                 </div>
                                 <div className="pos-receipt-info">
-                                    <span><strong>CUSTOMER:</strong></span>
-                                    <span style={{ fontWeight: '800' }}>{selectedSale.customer?.name || selectedSale.customerName || 'WALK-IN GUEST'}</span>
-                                </div>
-                                <div className="pos-receipt-info">
-                                    <span><strong>SALE TYPE:</strong></span>
-                                    <span>{selectedSale.isRetail ? 'RETAIL SALE' : 'WHOLESALE SALE'}</span>
+                                    <span>CUSTOMER:</span>
+                                    <span style={{ fontWeight: '800', color: 'var(--primary)' }}>{selectedSale.customer?.name || selectedSale.customerName || 'WALK-IN GUEST'}</span>
                                 </div>
                             </div>
 
                             <table className="pos-receipt-table">
                                 <thead>
                                     <tr>
-                                        <th style={{ textAlign: 'left' }}>ITEM DESCRIPTION</th>
-                                        <th style={{ textAlign: 'center' }}>QTY</th>
+                                        <th>ITEM</th>
                                         <th style={{ textAlign: 'right' }}>TOTAL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {selectedSale.items.map((item, idx) => (
                                         <tr key={idx}>
-                                            <td style={{ textAlign: 'left' }}>
+                                            <td>
                                                 <span className="pos-item-name">{item.product?.name || 'Item'}</span>
-                                                <span className="pos-item-meta">{item.quantity} {item.unit} x {item.priceAtSale.toLocaleString()}</span>
+                                                <span className="pos-item-meta">{item.quantity} {item.unit} @ {item.priceAtSale.toLocaleString()}</span>
                                             </td>
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: '700' }}>{item.quantity}</td>
-                                            <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '800' }}>{item.totalPrice.toLocaleString()}</td>
+                                            <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '800', fontSize: '15px' }}>{item.totalPrice.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -515,42 +510,36 @@ const Sales = () => {
 
                             <div className="pos-total-section">
                                 <div className="pos-total-row">
-                                    <span>SUBTOTAL</span>
+                                    <span>GROSS TOTAL</span>
                                     <span>{selectedSale.totalAmount.toLocaleString()}</span>
                                 </div>
                                 {(selectedSale.discount || 0) > 0 && (
-                                    <div className="pos-total-row" style={{ color: '#ef4444' }}>
+                                    <div className="pos-total-row" style={{ color: 'var(--danger)' }}>
                                         <span>DISCOUNT</span>
                                         <span>-{selectedSale.discount.toLocaleString()}</span>
                                     </div>
                                 )}
                                 <div className="pos-net-total">
-                                    <span>NET TOTAL</span>
+                                    <span>NET PAYABLE</span>
                                     <span>PKR {(selectedSale.totalAmount - (selectedSale.discount || 0)).toLocaleString()}</span>
                                 </div>
-                                <div className="pos-total-row">
-                                    <span>CASH RECEIVED</span>
+                                <div className="pos-total-row" style={{ marginTop: '10px', fontSize: '12px' }}>
+                                    <span>PAID AMOUNT</span>
                                     <span>{selectedSale.receivedAmount.toLocaleString()}</span>
                                 </div>
-                                <div className="pos-total-row" style={{ 
-                                    color: selectedSale.balanceAmount > 0 ? '#e11d48' : '#059669',
-                                    fontSize: '15px',
-                                    fontWeight: '900',
-                                    marginTop: '4px',
-                                    padding: '8px',
-                                    backgroundColor: selectedSale.balanceAmount > 0 ? '#fff1f2' : '#f0fdf4',
-                                    borderRadius: '8px'
-                                }}>
-                                    <span>{selectedSale.balanceAmount > 0 ? 'BALANCE DUE' : 'FULLY PAID'}</span>
-                                    <span>PKR {selectedSale.balanceAmount.toLocaleString()}</span>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div className="pos-status-badge" style={{ 
+                                        backgroundColor: selectedSale.balanceAmount > 0 ? '#fee2e2' : '#dcfce7',
+                                        color: selectedSale.balanceAmount > 0 ? '#991b1b' : '#166534'
+                                    }}>
+                                        {selectedSale.balanceAmount > 0 ? `DUE: PKR ${selectedSale.balanceAmount.toLocaleString()}` : 'FULLY PAID'}
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="pos-footer">
-                                * CUSTOMER COPY * <br />
-                                <div style={{ fontSize: '11px', margin: '8px 0', fontWeight: '800' }}>THANK YOU FOR YOUR VISIT!</div>
-                                PLEASE VISIT AGAIN <br />
-                                <span style={{ fontSize: '8px', opacity: 0.6 }}>Software by Guddu Traders Management System</span>
+                                THANK YOU FOR YOUR BUSINESS! <br />
+                                <div style={{ marginTop: '8px', opacity: 0.5 }}>Software by Guddu Traders Management</div>
                             </div>
                         </div>
                     </div>

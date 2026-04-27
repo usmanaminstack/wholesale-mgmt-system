@@ -427,114 +427,135 @@ label {
 /* POS Receipt Styles (Optimized for Visibility) */
 .pos-receipt {
   width: 100%;
-  max-width: 320px;
+  max-width: 400px;
   margin: 0 auto;
-  font-family: 'Inter', 'Courier New', Courier, monospace;
-  font-size: 13px;
-  color: #000;
-  background: #fff;
-  padding: 15px;
-  line-height: 1.5;
-  border: 1px solid #eee;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  line-height: 1.6;
 }
 
 .pos-receipt-header {
   text-align: center;
-  border-bottom: 2px solid #000;
-  padding-bottom: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 30px;
 }
 
 .pos-receipt-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
-  margin: 0;
-  letter-spacing: -0.5px;
-  color: #000;
+  color: var(--primary);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
 }
 
 .pos-receipt-subtitle {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #333;
-  margin: 4px 0;
+  letter-spacing: 2px;
+  color: var(--text-muted);
 }
 
 .pos-receipt-info {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 4px;
-  font-weight: 500;
+  font-size: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e2e8f0;
 }
 
 .pos-receipt-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 15px 0;
+  margin: 24px 0;
 }
 
 .pos-receipt-table th {
-  border-bottom: 1px solid #000;
-  padding: 8px 0;
-  font-size: 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  color: #000;
-  background: transparent;
+  color: var(--text-muted);
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f1f5f9;
 }
 
 .pos-receipt-table td {
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-  vertical-align: top;
+  padding: 14px 0;
+  border-bottom: 1px solid #f8fafc;
 }
 
 .pos-item-name {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
+  color: #0f172a;
   display: block;
 }
 
 .pos-item-meta {
-  font-size: 10px;
-  color: #666;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .pos-total-section {
-  border-top: 2px solid #000;
-  padding-top: 10px;
-  margin-top: 5px;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 16px;
+  margin-top: 20px;
 }
 
 .pos-total-row {
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
+  font-size: 13px;
   font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .pos-net-total {
-  font-size: 18px;
-  font-weight: 900;
-  border-top: 1px dashed #000;
-  border-bottom: 1px dashed #000;
-  padding: 8px 0;
-  margin: 8px 0;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.pos-net-total span:first-child {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.pos-net-total span:last-child {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -1px;
+}
+
+.pos-status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 12px;
 }
 
 .pos-footer {
   text-align: center;
-  font-size: 10px;
-  margin-top: 25px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
+  font-size: 11px;
+  margin-top: 40px;
+  color: var(--text-muted);
   font-weight: 600;
-  color: #444;
 }
 
 /* Animations */
