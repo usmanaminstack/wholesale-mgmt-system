@@ -47,8 +47,7 @@ const Layout = () => {
                 transition: 'padding-left 0.3s ease',
                 display: 'flex',
                 flexDirection: 'column',
-                position: 'relative',
-                zIndex: 10
+                position: 'relative'
             }}
                 className="main-content"
             >
@@ -70,7 +69,7 @@ const Layout = () => {
                     className="app-header"
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className="mobile-only" onClick={() => setIsSidebarOpen(true)} style={{ color: 'var(--text)', cursor: 'pointer', padding: '8px', marginLeft: '-8px' }}>
+                        <div data-testid="hamburger-menu" className="mobile-only" onClick={() => setIsSidebarOpen(true)} style={{ color: 'var(--text)', cursor: 'pointer', padding: '8px', marginLeft: '-8px' }}>
                             <Menu size={24} />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

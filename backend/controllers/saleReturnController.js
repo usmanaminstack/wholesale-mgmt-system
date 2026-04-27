@@ -63,3 +63,43 @@ exports.getReturns = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.deleteReturn = async (req, res) => {
+    try {
+        const saleReturn = await SaleReturn.findById(req.params.id);
+        if (!saleReturn) return res.status(404).json({ message: 'Return not found' });
+
+        const sale = await Sale.findById(saleReturn.saleId);
+        // We revert even if the original sale was deleted, as stock was added back during return creation
+
+        // 1. Revert Stock (Decrease stock that was added back during return)
+        for (const item of saleReturn.items) {
+            const product = await Product.findById(item.product);
+            if (product) {
+                const piecesToRemove = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                product.stockInPieces -= piecesToRemove;
+                await product.save();
+            }
+        }
+
+        // 2. Revert Customer Balance (Increase receivable)
+        if (saleReturn.customer) {
+            const customerDoc = await Customer.findById(saleReturn.customer);
+            if (customerDoc) {
+                customerDoc.outstandingReceivable += saleReturn.totalRefundAmount;
+                await customerDoc.save();
+            }
+        }
+
+        // 3. Delete Ledger Entry
+        const Ledger = require('../models/Ledger');
+        await Ledger.deleteOne({ referenceId: saleReturn._id });
+
+        // 4. Delete Return Record
+        await saleReturn.deleteOne();
+        res.json({ message: 'Return deleted and impact reversed successfully' });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

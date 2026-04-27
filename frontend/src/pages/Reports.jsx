@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
-import { FileText, Calendar, Filter, PieChart, Info, TrendingUp, BarChart, Printer, Eye } from 'lucide-react';
+import { FileText, Calendar, Filter, PieChart, Info, TrendingUp, BarChart, Printer, Eye, Trash2 } from 'lucide-react';
 import { getLocalDateString, getDaysAgoDate } from '../utils/dateUtils';
 import {
     Chart as ChartJS,
@@ -33,6 +33,8 @@ const Reports = () => {
     const [sales, setSales] = useState([]);
     const [purchases, setPurchases] = useState([]);
     const [expenses, setExpenses] = useState([]);
+    const [payments, setPayments] = useState([]);
+    const [returns, setReturns] = useState([]);
     const [showDetails, setShowDetails] = useState(false);
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [startDate, setStartDate] = useState(getLocalDateString(getDaysAgoDate(30)));
@@ -56,19 +58,79 @@ const Reports = () => {
         setTrendData(data);
     };
 
+    const handleDeleteSale = async (id) => {
+        if (window.confirm('Are you sure you want to delete this sale?')) {
+            try {
+                await api.delete(`/sales/${id}`);
+                fetchDetails();
+                fetchReports();
+                fetchTrends();
+            } catch (err) {}
+        }
+    };
+
+    const handleDeletePurchase = async (id) => {
+        if (window.confirm('Are you sure you want to delete this purchase?')) {
+            try {
+                await api.delete(`/purchases/${id}`);
+                fetchDetails();
+                fetchReports();
+                fetchTrends();
+            } catch (err) {}
+        }
+    };
+
+    const handleDeleteExpense = async (id) => {
+        if (window.confirm('Are you sure you want to delete this expense?')) {
+            try {
+                await api.delete(`/expenses/${id}`);
+                fetchDetails();
+                fetchReports();
+                fetchTrends();
+            } catch (err) {}
+        }
+    };
+
+    const handleDeletePayment = async (id) => {
+        if (window.confirm('Are you sure you want to delete this payment?')) {
+            try {
+                await api.delete(`/payments/${id}`);
+                fetchDetails();
+                fetchReports();
+                fetchTrends();
+            } catch (err) {}
+        }
+    };
+
+    const handleDeleteReturn = async (id) => {
+        if (window.confirm('Are you sure you want to delete this return?')) {
+            try {
+                await api.delete(`/returns/${id}`);
+                fetchDetails();
+                fetchReports();
+                fetchTrends();
+            } catch (err) {}
+        }
+    };
+
     const fetchDetails = async () => {
         setDetailsLoading(true);
         try {
-            const [sData, pData, eData] = await Promise.all([
+            const [sData, pData, eData, pyData, rData] = await Promise.all([
                 api.get(`/reports/sales?startDate=${startDate}&endDate=${endDate}`),
                 api.get(`/reports/purchases?startDate=${startDate}&endDate=${endDate}`),
-                api.get(`/expenses?startDate=${startDate}&endDate=${endDate}`)
+                api.get(`/expenses?startDate=${startDate}&endDate=${endDate}`),
+                api.get(`/payments?startDate=${startDate}&endDate=${endDate}`),
+                api.get(`/returns?startDate=${startDate}&endDate=${endDate}`)
             ]);
             setSales(sData.data);
             setPurchases(pData.data);
             setExpenses(eData.data);
+            setPayments(pyData.data);
+            setReturns(rData.data);
+            setShowDetails(true);
         } catch (err) {
-            alert("Error loading details: " + err.message);
+            console.error(err);
         } finally {
             setDetailsLoading(false);
         }
@@ -222,13 +284,13 @@ const Reports = () => {
                     )}
                 </div>
                 {showDetails && (
-                    <div style={{ overflowX: 'auto' }}>
+                    <div style={{ overflowX: 'auto' }} data-testid="scrollable-table-wrapper">
                         {detailsLoading ? (
                             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                 Loading records...
                             </div>
                         ) : (
-                            <table className="modern-table">
+                            <table className="modern-table" data-testid="reports-table">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
@@ -237,6 +299,7 @@ const Reports = () => {
                                         <th>Revenue</th>
                                         <th>Cost/Exp</th>
                                         <th style={{ textAlign: 'right' }}>Net Impact</th>
+                                        <th style={{ textAlign: 'right' }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -248,6 +311,9 @@ const Reports = () => {
                                             <td data-label="Rev" style={{ fontWeight: '700' }}>{s.totalAmount.toLocaleString()}</td>
                                             <td data-label="Cost">—</td>
                                             <td data-label="Net" style={{ color: 'var(--success)', fontWeight: '800', textAlign: 'right' }}>+{s.totalAmount.toLocaleString()}</td>
+                                            <td data-label="Action" style={{ textAlign: 'right' }}>
+                                                <button onClick={() => handleDeleteSale(s._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                            </td>
                                         </tr>
                                     ))}
                                     {purchases.map(p => (
@@ -258,6 +324,9 @@ const Reports = () => {
                                             <td data-label="Rev">—</td>
                                             <td data-label="Cost" style={{ fontWeight: '700' }}>{p.grandTotal.toLocaleString()}</td>
                                             <td data-label="Net" style={{ color: 'var(--danger)', fontWeight: '800', textAlign: 'right' }}>-{p.grandTotal.toLocaleString()}</td>
+                                            <td data-label="Action" style={{ textAlign: 'right' }}>
+                                                <button onClick={() => handleDeletePurchase(p._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                            </td>
                                         </tr>
                                     ))}
                                     {expenses.map(e => (
@@ -268,6 +337,35 @@ const Reports = () => {
                                             <td data-label="Rev">—</td>
                                             <td data-label="Cost" style={{ fontWeight: '700' }}>{e.amount.toLocaleString()}</td>
                                             <td data-label="Net" style={{ color: 'var(--danger)', fontWeight: '800', textAlign: 'right' }}>-{e.amount.toLocaleString()}</td>
+                                            <td data-label="Action" style={{ textAlign: 'right' }}>
+                                                <button onClick={() => handleDeleteExpense(e._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {payments.map(py => (
+                                        <tr key={py._id}>
+                                            <td data-label="Date">{new Date(py.paymentDate).toLocaleDateString()}</td>
+                                            <td data-label="Type"><span style={{ color: '#8b5cf6', fontWeight: '800' }}>PAYMENT</span></td>
+                                            <td data-label="Entity">{py.entityId?.name || 'Walk-in'} ({py.entityType})</td>
+                                            <td data-label="Rev">{py.entityType === 'Customer' ? py.amount.toLocaleString() : '—'}</td>
+                                            <td data-label="Cost">{py.entityType === 'Supplier' ? py.amount.toLocaleString() : '—'}</td>
+                                            <td data-label="Net" style={{ color: py.entityType === 'Customer' ? 'var(--success)' : 'var(--danger)', fontWeight: '800', textAlign: 'right' }}>{py.entityType === 'Customer' ? `+${py.amount.toLocaleString()}` : `-${py.amount.toLocaleString()}`}</td>
+                                            <td data-label="Action" style={{ textAlign: 'right' }}>
+                                                <button onClick={() => handleDeletePayment(py._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {returns.map(r => (
+                                        <tr key={r._id}>
+                                            <td data-label="Date">{new Date(r.returnDate).toLocaleDateString()}</td>
+                                            <td data-label="Type"><span style={{ color: '#ec4899', fontWeight: '800' }}>RETURN</span></td>
+                                            <td data-label="Entity">{r.customer?.name || 'Unknown'}</td>
+                                            <td data-label="Rev">—</td>
+                                            <td data-label="Cost" style={{ fontWeight: '700' }}>{r.totalRefundAmount.toLocaleString()}</td>
+                                            <td data-label="Net" style={{ color: 'var(--danger)', fontWeight: '800', textAlign: 'right' }}>-{r.totalRefundAmount.toLocaleString()}</td>
+                                            <td data-label="Action" style={{ textAlign: 'right' }}>
+                                                <button onClick={() => handleDeleteReturn(r._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

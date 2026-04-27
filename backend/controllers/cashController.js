@@ -34,3 +34,14 @@ exports.getAdjustments = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.deleteAdjustment = async (req, res) => {
+    try {
+        const adjustment = await CashAdjustment.findById(req.params.id);
+        if (!adjustment) return res.status(404).json({ message: 'Adjustment not found' });
+        await adjustment.deleteOne();
+        res.json({ message: 'Adjustment deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

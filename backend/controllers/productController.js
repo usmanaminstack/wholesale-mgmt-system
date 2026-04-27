@@ -46,9 +46,16 @@ exports.deleteProduct = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (product) {
-            product.isActive = false;
-            await product.save();
-            res.json({ message: 'Product marked as inactive' });
+            if (product.isActive === false) {
+                // Hard delete if already inactive
+                await product.deleteOne();
+                res.json({ message: 'Product permanently removed' });
+            } else {
+                // Soft delete
+                product.isActive = false;
+                await product.save();
+                res.json({ message: 'Product marked as inactive' });
+            }
         } else {
             res.status(404).json({ message: 'Product not found' });
         }

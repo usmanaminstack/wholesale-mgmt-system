@@ -3,6 +3,7 @@ import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
 import { Plus, Trash, Save, ShoppingCart, Truck, Edit, Trash2, Calendar, X, ArrowRight, Package, DollarSign } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
+import Modal from '../components/Modal';
 
 const Purchases = () => {
     const [purchases, setPurchases] = useState([]);
@@ -45,9 +46,7 @@ const Purchases = () => {
             try {
                 await api.delete(`/purchases/${id}`);
                 fetchPurchases();
-            } catch (err) {
-                alert(err.response?.data?.message || err.message);
-            }
+            } catch (err) {}
         }
     };
 
@@ -123,6 +122,7 @@ const Purchases = () => {
         }
     };
 
+
     return (
         <div className="animate-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }} className="page-header">
@@ -140,13 +140,17 @@ const Purchases = () => {
                     />
                     <button
                         onClick={() => setShowModal(true)}
-                        className="primary"
+                        className="primary desktop-only"
                         style={{ padding: '14px 28px', borderRadius: '14px' }}
                     >
                         <Plus size={20} /> New Purchase
                     </button>
                 </div>
             </div>
+
+            <button onClick={() => setShowModal(true)} className="fab-button mobile-only" title="New Purchase">
+                <Plus size={32} />
+            </button>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
@@ -196,159 +200,143 @@ const Purchases = () => {
                 </div>
             </div>
 
-            {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '900px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <ShoppingCart size={24} />
-                                </div>
-                                <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>{isEditing ? 'Update Stock Entry' : 'New Stock Restock'}</h3>
-                            </div>
-                            <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}><X size={20} /></button>
+            <Modal isOpen={showModal} onClose={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} maxWidth="900px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ShoppingCart size={20} />
                         </div>
+                        <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.25rem' }}>{isEditing ? 'Edit Purchase' : 'New Purchase'}</h3>
+                    </div>
+                    <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={18} /></button>
+                </div>
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginBottom: '32px', backgroundColor: '#f8fafc', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Purchase Date</label>
-                                    <input type="date" required value={formData.purchaseDate} onChange={e => setFormData({ ...formData, purchaseDate: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Supplier / Vendor</label>
-                                    <select
-                                        required
-                                        value={formData.supplier} onChange={e => setFormData({ ...formData, supplier: e.target.value })}
-                                    >
-                                        <option value="">Select Supplier</option>
-                                        {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Payment Type</label>
-                                    <select
-                                        value={formData.paymentType} onChange={e => setFormData({ ...formData, paymentType: e.target.value })}
-                                    >
-                                        <option value="Cash">Immediate Cash</option>
-                                        <option value="Credit">Credit (Supplier Account)</option>
-                                    </select>
-                                </div>
-                            </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="purchase-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                        <div>
+                            <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Date</label>
+                            <input type="date" required value={formData.purchaseDate} onChange={e => setFormData({ ...formData, purchaseDate: e.target.value })} style={{ padding: '10px' }} />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Supplier</label>
+                            <select
+                                required
+                                value={formData.supplier} onChange={e => setFormData({ ...formData, supplier: e.target.value })}
+                                style={{ padding: '10px' }}
+                            >
+                                <option value="">Select Supplier</option>
+                                {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment</label>
+                            <select
+                                value={formData.paymentType} onChange={e => setFormData({ ...formData, paymentType: e.target.value })}
+                                style={{ padding: '10px' }}
+                            >
+                                <option value="Cash">Cash</option>
+                                <option value="Credit">Credit</option>
+                            </select>
+                        </div>
+                    </div>
 
-                            <div style={{ marginBottom: '32px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                    <h4 style={{ margin: 0, fontWeight: '900', fontSize: '1.1rem', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Package size={20} color="var(--primary)" /> Item Breakdown
-                                    </h4>
-                                    <button type="button" onClick={addItem} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontWeight: '800', fontSize: '0.85rem', padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer' }}>+ Add Row</button>
-                                </div>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {formData.items.map((item, index) => (
-                                        <div key={index} className="purchase-row" style={{ 
-                                            display: 'grid', 
-                                            gridTemplateColumns: '4fr 1.5fr 2fr 2fr 50px', 
-                                            gap: '16px', 
-                                            alignItems: 'end',
-                                            backgroundColor: 'white',
-                                            padding: '16px',
-                                            borderRadius: '16px',
-                                            border: '1px solid var(--border)'
-                                        }}>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px' }}>PRODUCT</label>
-                                                <select
-                                                    required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)}
-                                                >
-                                                    <option value="">Choose Item...</option>
-                                                    {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px' }}>CTNS</label>
-                                                <input
-                                                    type="number" min="0.1" step="0.1" required
-                                                    value={item.quantityInCartons} onChange={e => handleItemChange(index, 'quantityInCartons', parseFloat(e.target.value))}
-                                                    style={{ fontWeight: '800' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px' }}>COST / CTN</label>
-                                                <input
-                                                    type="number" required
-                                                    value={item.costPerCarton} onChange={e => handleItemChange(index, 'costPerCarton', parseFloat(e.target.value))}
-                                                    style={{ fontWeight: '800' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px' }}>TOTAL</label>
-                                                <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', fontWeight: '900', color: 'var(--text)', border: '1px solid var(--border)' }}>
-                                                    {item.totalCost?.toLocaleString()}
-                                                </div>
-                                            </div>
-                                            <button type="button" onClick={() => removeItem(index)} style={{ padding: '12px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div style={{ borderTop: '2px solid var(--border)', paddingTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '16px' }}>
-                                <div style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.025em' }}>Order Total: <span style={{ color: 'var(--primary)' }}>PKR {grandTotal?.toLocaleString()}</span></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '20px', border: '1px solid #bbf7d0' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <label style={{ fontWeight: '900', color: '#166534', fontSize: '1rem' }}>PAID TO SUPPLIER:</label>
+                    <div style={{ marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h4 style={{ margin: 0, fontWeight: '800', color: 'var(--text)', fontSize: '0.9rem' }}>Items</h4>
+                            <button type="button" onClick={addItem} className="primary" style={{ padding: '8px 16px', fontSize: '0.8rem', gap: '6px', border: 'none', cursor: 'pointer' }}>
+                                <Plus size={16} /> Add Row
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {formData.items.map((item, index) => (
+                                <div key={index} className="purchase-row" style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: '4fr 1.5fr 2fr 2fr 44px', 
+                                    gap: '12px', 
+                                    alignItems: 'end',
+                                    backgroundColor: 'white',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--border)'
+                                }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>PRODUCT</label>
+                                        <select
+                                            required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)}
+                                            style={{ padding: '10px' }}
+                                        >
+                                            <option value="">Item...</option>
+                                            {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>CTNS</label>
                                         <input
-                                            type="number" style={{ width: '180px', fontSize: '1.25rem', fontWeight: '900', border: '2px solid #86efac' }}
-                                            value={formData.paidAmount} onChange={e => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })}
+                                            type="number" min="0.1" step="0.1" required
+                                            value={item.quantityInCartons} onChange={e => handleItemChange(index, 'quantityInCartons', parseFloat(e.target.value))}
+                                            style={{ fontWeight: '800', padding: '10px' }}
                                         />
                                     </div>
-                                    <div style={{ fontWeight: '800', color: (grandTotal - formData.paidAmount) > 0 ? 'var(--danger)' : '#166534', fontSize: '1.1rem' }}>
-                                        REMAINING: PKR {(grandTotal - formData.paidAmount)?.toLocaleString()}
+                                    <div>
+                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>COST</label>
+                                        <input
+                                            type="number" required
+                                            value={item.costPerCarton} onChange={e => handleItemChange(index, 'costPerCarton', parseFloat(e.target.value))}
+                                            style={{ fontWeight: '800', padding: '10px' }}
+                                        />
                                     </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>TOTAL</label>
+                                        <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#f8fafc', fontWeight: '800', color: 'var(--text)', border: '1.5px solid var(--border)', fontSize: '0.9rem' }}>
+                                            {item.totalCost?.toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ borderTop: '2px solid var(--border)', paddingTop: '24px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>Total: <span style={{ color: 'var(--primary)' }}>PKR {grandTotal?.toLocaleString()}</span></div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#f0fdf4', padding: '12px 16px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+                                    <label style={{ fontWeight: '800', color: '#166534', fontSize: '0.85rem' }}>PAID:</label>
+                                    <input
+                                        type="number" style={{ width: '120px', fontSize: '1rem', fontWeight: '900', border: '1.5px solid #86efac', padding: '6px 10px' }}
+                                        value={formData.paidAmount} onChange={e => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })}
+                                    />
                                 </div>
                             </div>
-
-                            <div style={{ display: 'flex', gap: '16px', marginTop: '40px' }}>
-                                <button type="submit" className="primary" style={{ flex: 2, padding: '18px', fontSize: '1.1rem', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                                    <Save size={24} /> {isEditing ? 'Update Restock Entry' : 'Confirm & Record Purchase'} <ArrowRight size={20} />
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button type="submit" className="primary" style={{ flex: 2, padding: '14px', fontSize: '1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', gap: '8px' }}>
+                                    <Save size={20} /> {isEditing ? 'Update' : 'Confirm'}
                                 </button>
-                                <button type="button" onClick={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '18px', fontWeight: '900' }}>Cancel</button>
+                                <button type="button" onClick={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} style={{ flex: 1, backgroundColor: '#f1f5f9', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '0.9rem', cursor: 'pointer' }}>Cancel</button>
                             </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                </form>
+            </Modal>
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-               @media (max-width: 850px) {
+               @media (max-width: 768px) {
                 .purchase-row { 
                     grid-template-columns: 1fr 1fr !important; 
-                    gap: 12px !important; 
-                    padding: 20px !important;
+                    gap: 8px !important; 
+                    padding: 12px !important;
                 }
                 .purchase-row > div:first-child { grid-column: span 2; }
                 .purchase-row > div:nth-child(4) { grid-column: span 1; }
                 .purchase-row > button { 
-                    grid-column: span 2; 
-                    margin-top: 8px;
-                    padding: 14px !important;
-                }
-                .order-summary-panel {
-                    align-items: center !important;
-                    text-align: center;
-                }
-                .order-summary-panel > div {
-                    flex-direction: column !important;
-                    width: 100%;
-                }
-                .order-summary-panel input {
+                    grid-column: span 1; 
                     width: 100% !important;
                 }
-              }
+               }
             `}} />
         </div>
     );

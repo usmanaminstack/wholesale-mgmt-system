@@ -3,6 +3,7 @@ import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
 import { Plus, Receipt, Search, Filter, Trash2, PiggyBank, Edit2, X, Wallet, Calendar, ArrowRight } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
+import Modal from '../components/Modal';
 
 const Expenses = () => {
     const [expenses, setExpenses] = useState([]);
@@ -30,9 +31,7 @@ const Expenses = () => {
             try {
                 await api.delete(`/expenses/${id}`);
                 fetchExpenses();
-            } catch (err) {
-                alert(err.message);
-            }
+            } catch (err) {}
         }
     };
 
@@ -68,6 +67,7 @@ const Expenses = () => {
 
     const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
+
     return (
         <div className="animate-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }} className="page-header">
@@ -83,11 +83,15 @@ const Expenses = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => setShowModal(true)} className="primary" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => setShowModal(true)} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> Add Expense
                     </button>
                 </div>
             </div>
+
+            <button onClick={() => setShowModal(true)} className="fab-button mobile-only" title="Add Expense">
+                <Plus size={32} />
+            </button>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                 <div className="card" style={{ 
@@ -179,65 +183,61 @@ const Expenses = () => {
                 </div>
             </div>
 
-            {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '450px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>{isEditing ? 'Edit Expense' : 'Record Expense'}</h3>
-                            <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingExpense(null); }} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
-                        </div>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>EXPENSE DATE</label>
-                                    <input type="date" required value={formData.expenseDate} onChange={e => setFormData({ ...formData, expenseDate: e.target.value })} />
-                                </div>
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>CATEGORY</label>
-                                    <select
-                                        required
-                                        value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                    >
-                                        <option value="">Select Category</option>
-                                        <option value="Fuel">Fuel / Logistics</option>
-                                        <option value="Rent">Shop Rent</option>
-                                        <option value="Salary">Staff Salaries</option>
-                                        <option value="Electricity">Electricity / Utilities</option>
-                                        <option value="Maintenance">Shop Maintenance</option>
-                                        <option value="Other">Miscellaneous</option>
-                                    </select>
-                                </div>
-
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>AMOUNT (PKR)</label>
-                                    <input type="number" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} style={{ fontSize: '1.25rem', fontWeight: '800' }} />
-                                </div>
-
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>PAYMENT METHOD</label>
-                                    <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}>
-                                        <option value="Cash">Cash in Hand</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Cheque">Cheque</option>
-                                    </select>
-                                </div>
-
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>REMARKS / DESCRIPTION</label>
-                                    <textarea placeholder="Details about this expenditure..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} style={{ height: '80px' }} />
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
-                                <button type="submit" className="primary" style={{ flex: 2, padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                    {isEditing ? 'Update Entry' : 'Save Expense'} <ArrowRight size={20} />
-                                </button>
-                                <button type="button" onClick={() => { setShowModal(false); setIsEditing(false); setEditingExpense(null); }} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '800' }}>Cancel</button>
-                            </div>
-                        </form>
-                    </div>
+            <Modal isOpen={showModal} onClose={() => { setShowModal(false); setIsEditing(false); setEditingExpense(null); }} maxWidth="450px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                    <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>{isEditing ? 'Edit Expense' : 'Record Expense'}</h3>
+                    <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingExpense(null); }} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
                 </div>
-            )}
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>EXPENSE DATE</label>
+                            <input type="date" required value={formData.expenseDate} onChange={e => setFormData({ ...formData, expenseDate: e.target.value })} />
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>CATEGORY</label>
+                            <select
+                                required
+                                value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}
+                            >
+                                <option value="">Select Category</option>
+                                <option value="Fuel">Fuel / Logistics</option>
+                                <option value="Rent">Shop Rent</option>
+                                <option value="Salary">Staff Salaries</option>
+                                <option value="Electricity">Electricity / Utilities</option>
+                                <option value="Maintenance">Shop Maintenance</option>
+                                <option value="Other">Miscellaneous</option>
+                            </select>
+                        </div>
+
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>AMOUNT (PKR)</label>
+                            <input type="number" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} style={{ fontSize: '1.25rem', fontWeight: '800' }} />
+                        </div>
+
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>PAYMENT METHOD</label>
+                            <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}>
+                                <option value="Cash">Cash in Hand</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>REMARKS / DESCRIPTION</label>
+                            <textarea placeholder="Details about this expenditure..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} style={{ height: '80px' }} />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
+                        <button type="submit" className="primary" style={{ flex: 2, padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                            {isEditing ? 'Update Entry' : 'Save Expense'} <ArrowRight size={20} />
+                        </button>
+                        <button type="button" onClick={() => { setShowModal(false); setIsEditing(false); setEditingExpense(null); }} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '800' }}>Cancel</button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

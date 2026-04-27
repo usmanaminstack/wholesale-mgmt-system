@@ -47,7 +47,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         />
       )}
 
-      <div style={{
+      <div data-testid="sidebar" style={{
         width: '280px',
         height: '100vh',
         background: 'var(--sidebar-bg)',

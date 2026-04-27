@@ -3,6 +3,7 @@ import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
 import { Plus, CreditCard, ArrowRight, Wallet, UserCheck, Search, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, X, Info } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
+import Modal from '../components/Modal';
 
 const Payments = () => {
     const [payments, setPayments] = useState([]);
@@ -42,9 +43,7 @@ const Payments = () => {
             try {
                 await api.delete(`/payments/${id}`);
                 fetchPayments();
-            } catch (err) {
-                alert(err.response?.data?.message || err.message);
-            }
+            } catch (err) {}
         }
     };
 
@@ -69,6 +68,7 @@ const Payments = () => {
         }
     };
 
+
     const entities = formData.entityType === 'Customer' ? customers : suppliers;
 
     return (
@@ -86,11 +86,15 @@ const Payments = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => setShowModal(true)} className="primary" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => setShowModal(true)} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> Record Entry
                     </button>
                 </div>
             </div>
+
+            <button data-testid="record-payment-fab" onClick={() => setShowModal(true)} className="fab-button mobile-only" title="Record Payment">
+                <Plus size={32} />
+            </button>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
@@ -161,108 +165,104 @@ const Payments = () => {
                 </div>
             </div>
 
-            {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '480px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>Record Cash Flow</h3>
-                            <button onClick={() => setShowModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
-                        </div>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>Transaction Flow</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, entityType: 'Customer', entityId: '' })}
-                                        style={{ 
-                                            padding: '16px',
-                                            borderRadius: '16px',
-                                            fontWeight: '800',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            backgroundColor: formData.entityType === 'Customer' ? 'var(--primary-light)' : 'white', 
-                                            border: `2px solid ${formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--border)'}`, 
-                                            color: formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--text-muted)' 
-                                        }}
-                                    >
-                                        <ArrowDownLeft size={24} />
-                                        Collection
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, entityType: 'Supplier', entityId: '' })}
-                                        style={{ 
-                                            padding: '16px',
-                                            borderRadius: '16px',
-                                            fontWeight: '800',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            backgroundColor: formData.entityType === 'Supplier' ? '#fef2f2' : 'white', 
-                                            border: `2px solid ${formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--border)'}`, 
-                                            color: formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--text-muted)' 
-                                        }}
-                                    >
-                                        <ArrowUpRight size={24} />
-                                        Settlement
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>{formData.entityType === 'Customer' ? 'Customer Name' : 'Supplier Name'}</label>
-                                <select
-                                    required
-                                    value={formData.entityId} onChange={e => setFormData({ ...formData, entityId: e.target.value })}
-                                    style={{ fontWeight: '700' }}
-                                >
-                                    <option value="">Select Account...</option>
-                                    {entities.map(e => (
-                                        <option key={e._id} value={e._id}>
-                                            {e.name} (Bal: PKR {(formData.entityType === 'Customer' ? e.outstandingReceivable : e.outstandingPayable)?.toLocaleString()})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Amount (PKR)</label>
-                                    <input type="number" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} style={{ fontWeight: '900', fontSize: '1.1rem' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Method</label>
-                                    <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })} style={{ fontWeight: '700' }}>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Cheque">Cheque</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Reference / Note</label>
-                                <input type="text" placeholder="Optional reference info..." value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} />
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                                <button type="submit" className="primary" style={{ flex: 2, padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                    Record Transaction <ArrowRight size={20} />
-                                </button>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '800' }}>Cancel</button>
-                            </div>
-                        </form>
-                    </div>
+            <Modal isOpen={showModal} onClose={() => setShowModal(false)} maxWidth="480px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                    <h3 data-testid="modal-title" style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>Record Cash Flow</h3>
+                    <button onClick={() => setShowModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
                 </div>
-            )}
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>Transaction Flow</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, entityType: 'Customer', entityId: '' })}
+                                style={{ 
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                    fontWeight: '800',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    backgroundColor: formData.entityType === 'Customer' ? 'var(--primary-light)' : 'white', 
+                                    border: `2px solid ${formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--border)'}`, 
+                                    color: formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--text-muted)' 
+                                }}
+                            >
+                                <ArrowDownLeft size={24} />
+                                Collection
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, entityType: 'Supplier', entityId: '' })}
+                                style={{ 
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                    fontWeight: '800',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    backgroundColor: formData.entityType === 'Supplier' ? '#fef2f2' : 'white', 
+                                    border: `2px solid ${formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--border)'}`, 
+                                    color: formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--text-muted)' 
+                                }}
+                            >
+                                <ArrowUpRight size={24} />
+                                Settlement
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>{formData.entityType === 'Customer' ? 'Customer Name' : 'Supplier Name'}</label>
+                        <select
+                            required
+                            value={formData.entityId} onChange={e => setFormData({ ...formData, entityId: e.target.value })}
+                            style={{ fontWeight: '700' }}
+                        >
+                            <option value="">Select Account...</option>
+                            {entities.map(e => (
+                                <option key={e._id} value={e._id}>
+                                    {e.name} (Bal: PKR {(formData.entityType === 'Customer' ? e.outstandingReceivable : e.outstandingPayable)?.toLocaleString()})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Amount (PKR)</label>
+                            <input type="number" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} style={{ fontWeight: '900', fontSize: '1.1rem' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Method</label>
+                            <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })} style={{ fontWeight: '700' }}>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Reference / Note</label>
+                        <input type="text" placeholder="Optional reference info..." value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                        <button type="submit" className="primary" style={{ flex: 2, padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                            Record Transaction <ArrowRight size={20} />
+                        </button>
+                        <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '800' }}>Cancel</button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

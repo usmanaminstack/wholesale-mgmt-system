@@ -14,13 +14,19 @@ import {
     Package,
     Plus,
     Minus,
-    ExternalLink
+    ExternalLink,
+    Trash2,
+    X,
+    Info
 } from 'lucide-react';
+import Modal from '../components/Modal';
 import { getLocalDateString } from '../utils/dateUtils';
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [activities, setActivities] = useState([]);
+    const [adjustments, setAdjustments] = useState([]);
+    const [showAdjustmentHistory, setShowAdjustmentHistory] = useState(false);
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState(getLocalDateString());
     const [endDate, setEndDate] = useState(getLocalDateString());
@@ -62,8 +68,41 @@ const Dashboard = () => {
             setShowAdjustModal(false);
             setAdjustData({ accountType: 'Cash', amount: '', reason: '', isAdd: true });
             fetchData();
+            fetchAdjustments();
         } catch (err) {
-            alert(err.response?.data?.message || err.message);
+            console.error(err);
+        }
+    };
+
+    const handleDeleteAdjustment = async (id) => {
+        if (window.confirm('Are you sure you want to delete this adjustment?')) {
+            try {
+                await api.delete(`/cash/adjustments/${id}`);
+                fetchData();
+                fetchAdjustments();
+            } catch (err) {}
+        }
+    };
+
+    const handleDeleteActivity = async (activity) => {
+        const type = activity.transactionType;
+        const id = activity.referenceId;
+        if (!id) return;
+
+        let endpoint = '';
+        if (type === 'Sale') endpoint = `/sales/${id}`;
+        else if (type === 'Purchase') endpoint = `/purchases/${id}`;
+        else if (type === 'Payment') endpoint = `/payments/${id}`;
+        else if (type === 'Expense') endpoint = `/expenses/${id}`;
+        else if (type === 'Return') endpoint = `/returns/${id}`;
+
+        if (!endpoint) return;
+
+        if (window.confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
+            try {
+                await api.delete(endpoint);
+                fetchData();
+            } catch (err) {}
         }
     };
 
@@ -306,6 +345,9 @@ const Dashboard = () => {
                                     <td data-label="Debit" style={{ color: 'var(--danger)', fontWeight: '600' }}>{act.debit > 0 ? `PKR ${act.debit.toLocaleString()}` : '—'}</td>
                                     <td data-label="Credit" style={{ color: 'var(--success)', fontWeight: '600' }}>{act.credit > 0 ? `PKR ${act.credit.toLocaleString()}` : '—'}</td>
                                     <td data-label="Balance" style={{ fontWeight: '800', textAlign: 'right' }}>PKR {act.balance.toLocaleString()}</td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <button onClick={() => handleDeleteActivity(act)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -338,6 +380,55 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
+
+            <Modal isOpen={showAdjustmentHistory} onClose={() => setShowAdjustmentHistory(false)} maxWidth="800px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h2 style={{ margin: 0, fontWeight: '900' }}>Adjustment History</h2>
+                    <button onClick={() => setShowAdjustmentHistory(false)} style={{ background: '#f1f5f9', border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}><X size={20} /></button>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Account</th>
+                                <th>Amount</th>
+                                <th>Reason</th>
+                                <th style={{ textAlign: 'right' }}>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {adjustments.map(adj => (
+                                <tr key={adj._id}>
+                                    <td>{new Date(adj.adjustmentDate).toLocaleDateString()}</td>
+                                    <td>
+                                        <span style={{ 
+                                            fontSize: '0.75rem', 
+                                            fontWeight: '800', 
+                                            padding: '4px 8px', 
+                                            borderRadius: '6px', 
+                                            backgroundColor: adj.accountType === 'Cash' ? '#fef3c7' : '#e0f2fe',
+                                            color: adj.accountType === 'Cash' ? '#92400e' : '#0369a1'
+                                        }}>
+                                            {adj.accountType.toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td style={{ fontWeight: '700', color: adj.amount >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                                        {adj.amount >= 0 ? `+${adj.amount}` : adj.amount}
+                                    </td>
+                                    <td style={{ fontSize: '0.9rem' }}>{adj.reason}</td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <button onClick={() => handleDeleteAdjustment(adj._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {adjustments.length === 0 && (
+                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No adjustments found.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Modal>
 
             <style dangerouslySetInnerHTML={{
                 __html: `

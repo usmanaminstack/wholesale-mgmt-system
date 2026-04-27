@@ -1,0 +1,109 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 1,
+    "passes": 1,
+    "pending": 0,
+    "failures": 0,
+    "testsRegistered": 1,
+    "passPercent": 100,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false,
+    "start": "2026-04-27T14:46:34.714Z",
+    "end": "2026-04-27T14:46:36.315Z",
+    "duration": 1601
+  },
+  "results": [
+    {
+      "uuid": "42d4da35-fc76-4810-b9ab-92f236d3d4fd",
+      "title": "",
+      "fullFile": "cypress\\e2e\\delete_sale.cy.js",
+      "file": "cypress\\e2e\\delete_sale.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "83ca28e4-dc2a-4313-a63d-733c7273eff6",
+          "title": "Sale Deletion",
+          "fullFile": "cypress\\e2e\\delete_sale.cy.js",
+          "file": "cypress\\e2e\\delete_sale.cy.js",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "should delete a sale and verify network request",
+              "fullTitle": "Sale Deletion should delete a sale and verify network request",
+              "timedOut": null,
+              "duration": 1579,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": "[\n    {\n        \"title\": \"Spec video recording\",\n        \"value\": \"videos\\\\cypress\\\\e2e/delete_sale.cy.js.mp4\"\n    }\n]",
+              "code": "// Intercept the delete request\ncy.intercept('DELETE', '**/api/sales/**').as('deleteSale');\ncy.get('body').then($body => {\n  if ($body.find('button[title=\"Delete\"]').length > 0) {\n    // Click delete on the first row\n    cy.get('button[title=\"Delete\"]').first().click();\n    // Handle window.confirm\n    cy.on('window:confirm', () => true);\n    // Wait for the delete request\n    cy.wait('@deleteSale').then(interception => {\n      expect(interception.response.statusCode).to.eq(200);\n      cy.log('Delete successful');\n    });\n    // Verify toast (if possible)\n    cy.get('body').contains('deleted').should('be.visible');\n  } else {\n    cy.log('No sales found to delete');\n  }\n});",
+              "err": {},
+              "uuid": "722b1823-c128-4cd3-93b3-7e62a8ad1856",
+              "parentUUID": "83ca28e4-dc2a-4313-a63d-733c7273eff6",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "722b1823-c128-4cd3-93b3-7e62a8ad1856"
+          ],
+          "failures": [],
+          "pending": [],
+          "skipped": [],
+          "duration": 1579,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.0.1"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": false,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.4"
+    },
+    "marge": {
+      "options": {
+        "reportDir": "cypress\\report\\.jsons",
+        "overwrite": false,
+        "html": false,
+        "json": true,
+        "saveJson": true,
+        "charts": true,
+        "embeddedScreenshots": true,
+        "inlineAssets": true
+      },
+      "version": "6.3.2"
+    }
+  }
+}

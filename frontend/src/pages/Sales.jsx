@@ -6,6 +6,8 @@ import jsPDF from 'jspdf';
 import DateFilter from '../components/DateFilter';
 import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download, Share2, CheckCircle2, Search } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
+import Modal from '../components/Modal';
+
 
 const Sales = () => {
     const [sales, setSales] = useState([]);
@@ -179,7 +181,7 @@ const Sales = () => {
                 await api.delete(`/sales/${id}`);
                 fetchSales();
             } catch (err) {
-                alert(err.response?.data?.message || err.message);
+                // Error handled by interceptor
             }
         }
     };
@@ -208,6 +210,7 @@ const Sales = () => {
         }
     };
 
+
     return (
         <div className="animate-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }} className="page-header">
@@ -229,7 +232,7 @@ const Sales = () => {
                 </div>
             </div>
 
-            <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
+            <button data-testid="new-sale-fab" onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
                 <Plus size={32} />
             </button>
 
@@ -282,9 +285,9 @@ const Sales = () => {
                                     </td>
                                     <td data-label="Actions" style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} className="action-btn">
-                                            <button onClick={() => { setSelectedSale(s); setShowViewModal(true); }} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }} title="View"><Eye size={18} /></button>
-                                            <button onClick={() => handleEditClick(s)} style={{ background: 'var(--primary-light)', color: 'var(--accent)', padding: '10px', borderRadius: '12px' }} title="Edit"><Edit size={18} /></button>
-                                            <button onClick={() => handleDeleteSale(s._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px' }} title="Delete"><Trash2 size={18} /></button>
+                                            <button onClick={() => { setSelectedSale(s); setShowViewModal(true); }} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="View"><Eye size={18} /></button>
+                                            <button onClick={() => handleEditClick(s)} style={{ background: 'var(--primary-light)', color: 'var(--accent)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Edit"><Edit size={18} /></button>
+                                            <button onClick={() => handleDeleteSale(s._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Delete"><Trash2 size={18} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -294,294 +297,285 @@ const Sales = () => {
                 </div>
             </div>
 
-            {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '1000px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h2 style={{ margin: 0, fontWeight: '800' }}>{isEditing ? 'Update Sale' : 'New Sale'}</h2>
-                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: '600' }} className="desktop-only">
-                                    <input type="checkbox" id="oos" checked={showOutOfStock} onChange={e => setShowOutOfStock(e.target.checked)} style={{ width: '18px', height: '18px' }} />
-                                    <label htmlFor="oos">Show Out of Stock</label>
-                                </div>
-                                <button onClick={() => setShowModal(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X size={24} /></button>
-                            </div>
+            <Modal isOpen={showModal} onClose={() => setShowModal(false)} maxWidth="1000px">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                    <h2 style={{ margin: 0, fontWeight: '800' }}>{isEditing ? 'Update Sale' : 'New Sale'}</h2>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: '600' }} className="desktop-only">
+                            <input type="checkbox" id="oos" checked={showOutOfStock} onChange={e => setShowOutOfStock(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                            <label htmlFor="oos" style={{ margin: 0 }}>Show Out of Stock</label>
                         </div>
-
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', marginBottom: '32px' }}>
-                                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                                    <button type="button" onClick={() => setFormData({ ...formData, isRetail: true })} style={{ flex: 1, backgroundColor: formData.isRetail ? 'var(--primary)' : 'white', color: formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px' }}>Retail Sale</button>
-                                    <button type="button" onClick={() => setFormData({ ...formData, isRetail: false })} style={{ flex: 1, backgroundColor: !formData.isRetail ? 'var(--primary)' : 'white', color: !formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px' }}>Wholesale Sale</button>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-                                    <div>
-                                        <label>Customer Type</label>
-                                        <select
-                                            value={formData.customer} onChange={e => {
-                                                const c = customers.find(cust => cust._id === e.target.value);
-                                                setFormData({ ...formData, customer: e.target.value, customerName: c ? c.name : '' });
-                                            }}
-                                        >
-                                            <option value="">Walking / New Customer</option>
-                                            {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                                        </select>
-                                    </div>
-                                    {!formData.customer && (
-                                        <>
-                                            <div>
-                                                <label>Customer Name</label>
-                                                <input type="text" placeholder="Full name" required value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
-                                            </div>
-                                            <div>
-                                                <label>Phone Number</label>
-                                                <input type="text" placeholder="03xx-xxxxxxx" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-                                            </div>
-                                        </>
-                                    )}
-                                    <div>
-                                        <label>Payment Method</label>
-                                        <select value={formData.paymentType} onChange={e => setFormData({ ...formData, paymentType: e.target.value })} >
-                                            <option value="Cash">Cash Payment</option>
-                                            <option value="Credit">Credit (Balance)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '32px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px' }}>
-                                    <h3 style={{ margin: 0, fontWeight: '700' }}>Order Items</h3>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button type="button" onClick={() => toast.success('Barcode Scanner Initializing...')} style={{ backgroundColor: '#f1f5f9', color: 'var(--text)', padding: '10px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Search size={18} /> <span className="desktop-only">Scan</span>
-                                        </button>
-                                        <button type="button" onClick={addItem} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 20px', borderRadius: '12px', fontWeight: '700' }}>+ Add Item</button>
-                                    </div>
-                                </div>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {formData.items.map((item, index) => (
-                                        <div key={index} className="invoice-row" style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.5fr 1.5fr 48px', gap: '16px', alignItems: 'end', backgroundColor: 'white', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                            <div>
-                                                <label className="desktop-only">Product Selection</label>
-                                                <select required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)} >
-                                                    <option value="">-- Choose Product --</option>
-                                                    {products
-                                                        .filter(p => showOutOfStock || p.stockInPieces > 0 || item.product === p._id)
-                                                        .map(p => (
-                                                            <option key={p._id} value={p._id}>
-                                                                {p.name} (Stock: {(p.stockInPieces / (p.piecesPerCarton || 1)).toFixed(1)} Ctn)
-                                                            </option>
-                                                        ))
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="desktop-only">Unit</label>
-                                                <select value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)} >
-                                                    <option value="Carton">Cartons</option>
-                                                    <option value="Piece">Pieces</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="desktop-only">Qty</label>
-                                                <input type="number" min="1" required value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))} />
-                                            </div>
-                                            <div>
-                                                <label className="desktop-only">Price</label>
-                                                <input type="number" required value={item.priceAtSale} onChange={e => handleItemChange(index, 'priceAtSale', parseFloat(e.target.value))} />
-                                            </div>
-                                            <div>
-                                                <label className="desktop-only">Subtotal</label>
-                                                <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', fontWeight: '800', textAlign: 'right' }}>{item.totalPrice?.toLocaleString()}</div>
-                                            </div>
-                                            <button type="button" onClick={() => removeItem(index)} style={{ padding: '12px', color: 'var(--danger)', background: '#fff1f2', borderRadius: '10px' }}><Trash2 size={20} /></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', borderTop: '2px solid var(--border)', paddingTop: '32px' }}>
-                                <div style={{ color: 'var(--text-muted)' }}>
-                                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>• Stock will be automatically adjusted.</p>
-                                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>• For credit sales, a ledger entry will be created.</p>
-                                    <p style={{ margin: '0', fontSize: '0.9rem' }}>• Print option available after saving.</p>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Gross Total:</span>
-                                        <span style={{ fontWeight: '700' }}>PKR {totalAmount?.toLocaleString()}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Discount:</span>
-                                        <input
-                                            type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right', color: 'var(--accent)' }}
-                                            value={formData.discount} onChange={e => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
-                                        />
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: 'var(--primary-light)', borderRadius: '12px' }}>
-                                        <span style={{ fontWeight: '800', color: 'var(--primary-dark)', fontSize: '1.1rem' }}>Net Total:</span>
-                                        <span style={{ fontWeight: '900', color: 'var(--primary)', fontSize: '1.3rem' }}>PKR {(totalAmount - formData.discount)?.toLocaleString()}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Amount Received:</span>
-                                        <input
-                                            type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
-                                            value={formData.receivedAmount} onChange={e => setFormData({ ...formData, receivedAmount: parseFloat(e.target.value) || 0 })}
-                                        />
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '700', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>Balance Due:</span>
-                                        <span style={{ fontWeight: '900', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)', fontSize: '1.1rem' }}>PKR {(totalAmount - formData.discount - formData.receivedAmount)?.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '16px', marginTop: '40px' }}>
-                                <button type="submit" className="primary" style={{ flex: 2, padding: '16px', fontSize: '1.1rem', borderRadius: '16px' }}>
-                                    <Save size={22} /> {isEditing ? 'Update Invoice' : 'Create Invoice'}
-                                </button>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '700' }}>Cancel</button>
-                            </div>
-                        </form>
+                        <button onClick={() => setShowModal(false)} style={{ background: 'none', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
                     </div>
                 </div>
-            )}
 
-            {showViewModal && selectedSale && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '450px' }}>
-                        <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ margin: 0 }}>Invoice Receipt</h3>
+                <form onSubmit={handleSubmit}>
+                    <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                            <button type="button" onClick={() => setFormData({ ...formData, isRetail: true })} style={{ flex: 1, backgroundColor: formData.isRetail ? 'var(--primary)' : 'white', color: formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Retail Sale</button>
+                            <button type="button" onClick={() => setFormData({ ...formData, isRetail: false })} style={{ flex: 1, backgroundColor: !formData.isRetail ? 'var(--primary)' : 'white', color: !formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Wholesale Sale</button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+                            <div>
+                                <label>Customer Type</label>
+                                <select
+                                    value={formData.customer} onChange={e => {
+                                        const c = customers.find(cust => cust._id === e.target.value);
+                                        setFormData({ ...formData, customer: e.target.value, customerName: c ? c.name : '' });
+                                    }}
+                                >
+                                    <option value="">Walking / New Customer</option>
+                                    {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            {!formData.customer && (
+                                <>
+                                    <div>
+                                        <label>Customer Name</label>
+                                        <input type="text" placeholder="Full name" required value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label>Phone Number</label>
+                                        <input type="text" placeholder="03xx-xxxxxxx" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                                    </div>
+                                </>
+                            )}
+                            <div>
+                                <label>Payment Method</label>
+                                <select value={formData.paymentType} onChange={e => setFormData({ ...formData, paymentType: e.target.value })} >
+                                    <option value="Cash">Cash Payment</option>
+                                    <option value="Credit">Credit (Balance)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px' }}>
+                            <h3 style={{ margin: 0, fontWeight: '700' }}>Order Items</h3>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={printInvoice} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '10px' }}><Printer size={20} /></button>
-                                <button onClick={downloadPDF} style={{ background: 'var(--primary)', color: 'white', padding: '10px', borderRadius: '10px' }}><Download size={20} /></button>
-                                <button onClick={() => setShowViewModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', padding: '10px', borderRadius: '10px' }}><X size={20} /></button>
+                                <button type="button" onClick={() => toast.success('Barcode Scanner Initializing...')} style={{ backgroundColor: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '10px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                    <Search size={18} /> <span className="desktop-only">Scan</span>
+                                </button>
+                                <button type="button" onClick={addItem} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>+ Add Item</button>
                             </div>
                         </div>
 
-                        <div id="receipt-print-area" className="pos-receipt">
-                            <div className="pos-receipt-header">
-                                <div style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: '800', letterSpacing: '2px', marginBottom: '8px' }}>OFFICIAL INVOICE</div>
-                                <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
-                                <div className="pos-receipt-subtitle">Premium Cold Drink Wholesale</div>
-                                <div style={{ fontSize: '11px', marginTop: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                                    Main Bazar Road, Guddu Trader Shop <br />
-                                    Phone: 0300-1234567 | 0311-7654321
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '20px' }}>
-                                <div className="pos-receipt-info">
-                                    <span>INVOICE NO:</span>
-                                    <span style={{ fontWeight: '800' }}>#{selectedSale._id.slice(-6).toUpperCase()}</span>
-                                </div>
-                                <div className="pos-receipt-info">
-                                    <span>DATE:</span>
-                                    <span>{new Date(selectedSale.saleDate).toLocaleDateString()}</span>
-                                </div>
-                                <div className="pos-receipt-info">
-                                    <span>CUSTOMER:</span>
-                                    <span style={{ fontWeight: '800', color: 'var(--primary)' }}>{selectedSale.customer?.name || selectedSale.customerName || 'WALK-IN GUEST'}</span>
-                                </div>
-                            </div>
-
-                            <table className="pos-receipt-table">
-                                <thead>
-                                    <tr>
-                                        <th style={{ textAlign: 'left', width: '40%' }}>ITEM</th>
-                                        <th style={{ textAlign: 'center', width: '15%' }}>QTY</th>
-                                        <th style={{ textAlign: 'right', width: '20%' }}>PRICE</th>
-                                        <th style={{ textAlign: 'right', width: '25%' }}>TOTAL</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedSale.items.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td style={{ textAlign: 'left' }}>
-                                                <span className="pos-item-name">{item.product?.name || 'Item'}</span>
-                                            </td>
-                                            <td style={{ textAlign: 'center', verticalAlign: 'top', fontWeight: '700', fontSize: '12px' }}>
-                                                {item.quantity}<span style={{fontSize: '9px', display:'block', color: 'var(--text-muted)'}}>{item.unit}</span>
-                                            </td>
-                                            <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '600', fontSize: '12px' }}>
-                                                {item.priceAtSale.toLocaleString()}
-                                            </td>
-                                            <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontSize: '13px' }}>
-                                                {item.totalPrice.toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-
-                            <div className="pos-total-section">
-                                <div className="pos-total-row">
-                                    <span>GROSS TOTAL</span>
-                                    <span>{selectedSale.totalAmount.toLocaleString()}</span>
-                                </div>
-                                {(selectedSale.discount || 0) > 0 && (
-                                    <div className="pos-total-row" style={{ color: 'var(--danger)' }}>
-                                        <span>DISCOUNT</span>
-                                        <span>-{selectedSale.discount.toLocaleString()}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {formData.items.map((item, index) => (
+                                <div key={index} className="invoice-row" style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.5fr 1.5fr 48px', gap: '16px', alignItems: 'end', backgroundColor: 'white', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                    <div>
+                                        <label className="desktop-only">Product Selection</label>
+                                        <select required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)} >
+                                            <option value="">-- Choose Product --</option>
+                                            {products
+                                                .filter(p => showOutOfStock || p.stockInPieces > 0 || item.product === p._id)
+                                                .map(p => (
+                                                    <option key={p._id} value={p._id}>
+                                                        {p.name} (Stock: {(p.stockInPieces / (p.piecesPerCarton || 1)).toFixed(1)} Ctn)
+                                                    </option>
+                                                ))
+                                            }
+                                        </select>
                                     </div>
-                                )}
-                                <div className="pos-net-total">
-                                    <span>NET PAYABLE</span>
-                                    <span>PKR {(selectedSale.totalAmount - (selectedSale.discount || 0)).toLocaleString()}</span>
-                                </div>
-                                <div className="pos-total-row" style={{ marginTop: '10px', fontSize: '12px' }}>
-                                    <span>PAID AMOUNT</span>
-                                    <span>{selectedSale.receivedAmount.toLocaleString()}</span>
-                                </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div className="pos-status-badge" style={{ 
-                                        backgroundColor: selectedSale.balanceAmount > 0 ? '#fee2e2' : '#dcfce7',
-                                        color: selectedSale.balanceAmount > 0 ? '#991b1b' : '#166534'
-                                    }}>
-                                        {selectedSale.balanceAmount > 0 ? `DUE: PKR ${selectedSale.balanceAmount.toLocaleString()}` : 'FULLY PAID'}
+                                    <div>
+                                        <label className="desktop-only">Unit</label>
+                                        <select value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)} >
+                                            <option value="Carton">Cartons</option>
+                                            <option value="Piece">Pieces</option>
+                                        </select>
                                     </div>
+                                    <div>
+                                        <label className="desktop-only">Qty</label>
+                                        <input type="number" min="1" required value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))} />
+                                    </div>
+                                    <div>
+                                        <label className="desktop-only">Price</label>
+                                        <input type="number" required value={item.priceAtSale} onChange={e => handleItemChange(index, 'priceAtSale', parseFloat(e.target.value))} />
+                                    </div>
+                                    <div>
+                                        <label className="desktop-only">Subtotal</label>
+                                        <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', fontWeight: '800', textAlign: 'right' }}>{item.totalPrice?.toLocaleString()}</div>
+                                    </div>
+                                    <button type="button" onClick={() => removeItem(index)} style={{ padding: '12px', color: 'var(--danger)', border: 'none', background: '#fff1f2', borderRadius: '10px', cursor: 'pointer' }}><Trash2 size={20} /></button>
                                 </div>
-                            </div>
+                            ))}
+                        </div>
+                    </div>
 
-                            <div className="pos-footer">
-                                THANK YOU FOR YOUR BUSINESS! <br />
-                                <div style={{ marginTop: '8px', opacity: 0.5 }}>Software by Guddu Traders Management</div>
+                    <div style={{ borderTop: '2px solid var(--border)', paddingTop: '32px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+                            <div style={{ color: 'var(--text-muted)' }} className="desktop-only">
+                                <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>• Stock will be automatically adjusted.</p>
+                                <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>• For credit sales, a ledger entry will be created.</p>
+                                <p style={{ margin: '0', fontSize: '0.9rem' }}>• Print option available after saving.</p>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Gross Total:</span>
+                                    <span style={{ fontWeight: '700' }}>PKR {totalAmount?.toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Discount:</span>
+                                    <input
+                                        type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right', color: 'var(--accent)' }}
+                                        value={formData.discount} onChange={e => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: 'var(--primary-light)', borderRadius: '12px' }}>
+                                    <span style={{ fontWeight: '800', color: 'var(--primary-dark)', fontSize: '1.1rem' }}>Net Total:</span>
+                                    <span style={{ fontWeight: '900', color: 'var(--primary)', fontSize: '1.3rem' }}>PKR {(totalAmount - formData.discount)?.toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Amount Received:</span>
+                                    <input
+                                        type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
+                                        value={formData.receivedAmount} onChange={e => setFormData({ ...formData, receivedAmount: parseFloat(e.target.value) || 0 })}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: '700', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>Balance Due:</span>
+                                    <span style={{ fontWeight: '900', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)', fontSize: '1.1rem' }}>PKR {(totalAmount - formData.discount - formData.receivedAmount)?.toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
+                                    <button type="submit" className="primary" style={{ flex: 2, padding: '16px', fontSize: '1.1rem', borderRadius: '16px', border: 'none', cursor: 'pointer' }}>
+                                        <Save size={22} /> {isEditing ? 'Update Invoice' : 'Create Invoice'}
+                                    </button>
+                                    <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', border: 'none', borderRadius: '16px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                </form>
+            </Modal>
 
-            {showSuccessModal && lastCreatedInvoice && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '40px' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#dcfce7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                            <CheckCircle2 size={48} />
-                        </div>
-                        <h2 style={{ margin: '0 0 8px 0', fontWeight: '900' }}>Invoice Created!</h2>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>Invoice #{lastCreatedInvoice._id.slice(-6).toUpperCase()} has been saved successfully.</p>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                            <button onClick={() => { setSelectedSale(lastCreatedInvoice); printInvoice(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                <Printer size={18} /> Print
-                            </button>
-                            <button onClick={() => { setSelectedSale(lastCreatedInvoice); downloadPDF(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                <Download size={18} /> PDF
-                            </button>
-                        </div>
-                        <button onClick={handleShare} style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#f1f5f9', color: 'var(--text)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
-                            <Share2 size={18} /> Share Invoice
-                        </button>
-                        
-                        <button onClick={() => setShowSuccessModal(false)} style={{ width: '100%', padding: '16px', borderRadius: '16px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', fontWeight: '900', fontSize: '1rem', cursor: 'pointer' }}>
-                            Done & Close
-                        </button>
+            <Modal isOpen={showViewModal && !!selectedSale} onClose={() => setShowViewModal(false)} maxWidth="450px">
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, paddingBottom: '12px' }}>
+                    <h3 style={{ margin: 0 }}>Invoice Receipt</h3>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={printInvoice} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '10px' }}><Printer size={20} /></button>
+                        <button onClick={downloadPDF} style={{ background: 'var(--primary)', color: 'white', padding: '10px', borderRadius: '10px' }}><Download size={20} /></button>
+                        <button onClick={() => setShowViewModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', padding: '10px', borderRadius: '10px' }}><X size={20} /></button>
                     </div>
                 </div>
-            )}
+
+                <div id="receipt-print-area" className="pos-receipt" data-testid="pos-receipt">
+                    <div className="pos-receipt-header">
+                        <div style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: '800', letterSpacing: '2px', marginBottom: '8px' }}>OFFICIAL INVOICE</div>
+                        <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
+                        <div className="pos-receipt-subtitle">Premium Cold Drink Wholesale</div>
+                        <div style={{ fontSize: '11px', marginTop: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                            Main Bazar Road, Guddu Trader Shop <br />
+                            Phone: 0300-1234567 | 0311-7654321
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '20px' }}>
+                        <div className="pos-receipt-info">
+                            <span>INVOICE NO:</span>
+                            <span style={{ fontWeight: '800' }}>#{selectedSale?._id.slice(-6).toUpperCase()}</span>
+                        </div>
+                        <div className="pos-receipt-info">
+                            <span>DATE:</span>
+                            <span>{selectedSale && new Date(selectedSale.saleDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="pos-receipt-info">
+                            <span>CUSTOMER:</span>
+                            <span style={{ fontWeight: '800', color: 'var(--primary)' }}>{selectedSale?.customer?.name || selectedSale?.customerName || 'WALK-IN GUEST'}</span>
+                        </div>
+                    </div>
+
+                    <table className="pos-receipt-table">
+                        <thead data-testid="receipt-header">
+                            <tr>
+                                <th style={{ textAlign: 'left', width: '40%' }}>ITEM</th>
+                                <th style={{ textAlign: 'center', width: '15%' }}>QTY</th>
+                                <th style={{ textAlign: 'right', width: '20%' }}>PRICE</th>
+                                <th style={{ textAlign: 'right', width: '25%' }}>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {selectedSale?.items.map((item, idx) => (
+                                <tr key={idx}>
+                                    <td style={{ textAlign: 'left' }}>
+                                        <span className="pos-item-name">{item.product?.name || 'Item'}</span>
+                                    </td>
+                                    <td style={{ textAlign: 'center', verticalAlign: 'top', fontWeight: '700', fontSize: '12px' }}>
+                                        {item.quantity}<span style={{ fontSize: '9px', display: 'block', color: 'var(--text-muted)' }}>{item.unit}</span>
+                                    </td>
+                                    <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '600', fontSize: '12px' }}>
+                                        {item.priceAtSale.toLocaleString()}
+                                    </td>
+                                    <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontSize: '13px' }}>
+                                        {item.totalPrice.toLocaleString()}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <div className="pos-total-section">
+                        <div className="pos-total-row">
+                            <span>GROSS TOTAL</span>
+                            <span>{selectedSale?.totalAmount.toLocaleString()}</span>
+                        </div>
+                        {(selectedSale?.discount || 0) > 0 && (
+                            <div className="pos-total-row" style={{ color: 'var(--danger)' }}>
+                                <span>DISCOUNT</span>
+                                <span>-{selectedSale?.discount.toLocaleString()}</span>
+                            </div>
+                        )}
+                        <div className="pos-net-total">
+                            <span>NET PAYABLE</span>
+                            <span>PKR {(selectedSale?.totalAmount - (selectedSale?.discount || 0)).toLocaleString()}</span>
+                        </div>
+                        <div className="pos-total-row" style={{ marginTop: '10px', fontSize: '12px' }}>
+                            <span>PAID AMOUNT</span>
+                            <span>{selectedSale?.receivedAmount.toLocaleString()}</span>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div className="pos-status-badge" style={{
+                                backgroundColor: selectedSale?.balanceAmount > 0 ? '#fee2e2' : '#dcfce7',
+                                color: selectedSale?.balanceAmount > 0 ? '#991b1b' : '#166534'
+                            }}>
+                                {selectedSale?.balanceAmount > 0 ? `DUE: PKR ${selectedSale?.balanceAmount.toLocaleString()}` : 'FULLY PAID'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pos-footer">
+                        THANK YOU FOR YOUR BUSINESS! <br />
+                        <div style={{ marginTop: '8px', opacity: 0.5 }}>Software by Guddu Traders Management</div>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal isOpen={showSuccessModal && !!lastCreatedInvoice} onClose={() => setShowSuccessModal(false)} maxWidth="400px">
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#dcfce7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                        <CheckCircle2 size={48} />
+                    </div>
+                    <h2 style={{ margin: '0 0 8px 0', fontWeight: '900' }}>Invoice Created!</h2>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>Invoice #{lastCreatedInvoice?._id.slice(-6).toUpperCase()} has been saved successfully.</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); printInvoice(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Printer size={18} /> Print
+                        </button>
+                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); downloadPDF(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Download size={18} /> PDF
+                        </button>
+                    </div>
+                    <button onClick={handleShare} style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#f1f5f9', color: 'var(--text)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
+                        <Share2 size={18} /> Share Invoice
+                    </button>
+
+                    <button onClick={() => setShowSuccessModal(false)} style={{ width: '100%', padding: '16px', borderRadius: '16px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', fontWeight: '900', fontSize: '1rem', cursor: 'pointer' }}>
+                        Done & Close
+                    </button>
+                </div>
+            </Modal>
 
             <style dangerouslySetInnerHTML={{
                 __html: `

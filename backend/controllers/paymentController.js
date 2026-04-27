@@ -69,7 +69,7 @@ exports.getPayments = async (req, res) => {
             end.setHours(23, 59, 59, 999);
             query.paymentDate = { $gte: start, $lte: end };
         }
-        const payments = await Payment.find(query).sort({ paymentDate: -1 });
+        const payments = await Payment.find(query).sort({ paymentDate: -1 }).populate('entityId');
         res.json(payments);
     } catch (error) {
         res.status(500).json({ message: error.message });
