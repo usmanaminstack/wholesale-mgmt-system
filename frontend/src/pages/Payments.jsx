@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
-import { Plus, CreditCard, ArrowRight, Wallet, UserCheck, Search, Trash2 } from 'lucide-react';
+import { Plus, CreditCard, ArrowRight, Wallet, UserCheck, Search, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, X, Info } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
 
 const Payments = () => {
@@ -72,13 +72,13 @@ const Payments = () => {
     const entities = formData.entityType === 'Customer' ? customers : suppliers;
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+        <div className="animate-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }} className="page-header">
                 <div>
-                    <h1 style={{ fontSize: '1.875rem', fontWeight: '800', letterSpacing: '-0.025em', marginBottom: '4px' }}>Cash Payments</h1>
-                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>Record incoming collections and outgoing supplier settlements.</p>
+                    <h1 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '-0.025em', marginBottom: '4px', color: 'var(--text)' }}>Cash Payments</h1>
+                    <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>Manage collections from customers and payments to vendors.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <DateFilter
                         startDate={startDate}
                         endDate={endDate}
@@ -86,111 +86,176 @@ const Payments = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => setShowModal(true)} className="primary" style={{ padding: '12px 24px' }}>
-                        <Plus size={20} /> Record New Entry
+                    <button onClick={() => setShowModal(true)} className="primary" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                        <Plus size={20} /> Record Entry
                     </button>
                 </div>
             </div>
 
-            <div className="card" style={{ padding: 0 }}>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
-                    <table>
+                    <table className="modern-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>Transaction Date</th>
                                 <th>Flow Type</th>
-                                <th>Customer / Supplier</th>
+                                <th>Party Name</th>
                                 <th>Amount</th>
-                                <th>Method</th>
-                                <th className="desktop-only">Reference/Note</th>
+                                <th className="desktop-only">Method</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {payments.map(p => (
                                 <tr key={p._id}>
-                                    <td style={{ fontSize: '0.85rem' }}>{new Date(p.paymentDate).toLocaleDateString()}</td>
-                                    <td>
+                                    <td data-label="Date">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)', fontWeight: '700' }}>
+                                            <Calendar size={14} color="var(--primary)" /> {new Date(p.paymentDate).toLocaleDateString()}
+                                        </div>
+                                    </td>
+                                    <td data-label="Type">
                                         <div style={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '6px',
-                                            padding: '4px 10px',
-                                            borderRadius: '50px',
-                                            backgroundColor: p.entityType === 'Customer' ? '#f0fdf4' : '#fee2e2',
-                                            color: p.entityType === 'Customer' ? '#166534' : '#991b1b',
+                                            padding: '6px 12px',
+                                            borderRadius: '10px',
+                                            backgroundColor: p.entityType === 'Customer' ? '#f0fdf4' : '#fef2f2',
+                                            color: p.entityType === 'Customer' ? '#166534' : '#ef4444',
                                             fontSize: '0.75rem',
-                                            fontWeight: '700'
+                                            fontWeight: '900',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.025em'
                                         }}>
-                                            {p.entityType === 'Customer' ? 'INCOMING' : 'OUTGOING'}
+                                            {p.entityType === 'Customer' ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}
+                                            {p.entityType === 'Customer' ? 'Collection' : 'Payment'}
                                         </div>
                                     </td>
-                                    <td style={{ fontWeight: '600' }}>{p.entityId?.name || '---'}</td>
-                                    <td style={{ fontWeight: '800', color: p.entityType === 'Customer' ? 'var(--success)' : 'var(--danger)' }}>
-                                        {p.entityType === 'Customer' ? '+' : '-'} PKR {p.amount?.toLocaleString()}
+                                    <td data-label="Party">
+                                        <div style={{ fontWeight: '800', color: 'var(--text)' }}>{p.entityId?.name || '---'}</div>
                                     </td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
-                                            <CreditCard size={14} color="var(--text-muted)" /> {p.paymentMethod}
+                                    <td data-label="Amount">
+                                        <div style={{ fontWeight: '900', fontSize: '1.1rem', color: p.entityType === 'Customer' ? 'var(--success)' : 'var(--danger)' }}>
+                                            {p.entityType === 'Customer' ? '+' : '-'} PKR {p.amount?.toLocaleString()}
                                         </div>
                                     </td>
-                                    <td className="desktop-only" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{p.note || '---'}</td>
-                                    <td>
-                                        <button onClick={() => handleDelete(p._id)} style={{ padding: '6px', color: 'var(--danger)', background: 'none' }} title="Delete Record"><Trash2 size={16} /></button>
+                                    <td data-label="Method" className="desktop-only">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                            <Wallet size={14} /> {p.paymentMethod}
+                                        </div>
+                                    </td>
+                                    <td data-label="Actions" style={{ textAlign: 'right' }}>
+                                        <button onClick={() => handleDelete(p._id)} style={{ padding: '10px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '12px', cursor: 'pointer' }} title="Remove Entry"><Trash2 size={18} /></button>
                                     </td>
                                 </tr>
                             ))}
+                            {payments.length === 0 && (
+                                <tr>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontWeight: '600' }}>No payment records found for this period.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card" style={{ width: '90%', maxWidth: '450px' }}>
-                        <h3 style={{ marginTop: 0 }}>Record Flow</h3>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '24px' }}>
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '16px' }}>
+                    <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '32px', borderRadius: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                            <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>Record Cash Flow</h3>
+                            <button onClick={() => setShowModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', marginBottom: '8px' }}>Payment Source/Destination</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>Transaction Flow</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, entityType: 'Customer', entityId: '' })}
-                                        style={{ backgroundColor: formData.entityType === 'Customer' ? '#eef2ff' : 'white', border: `1px solid ${formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--border)'}`, color: formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--text-muted)' }}
+                                        style={{ 
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            fontWeight: '800',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            backgroundColor: formData.entityType === 'Customer' ? 'var(--primary-light)' : 'white', 
+                                            border: `2px solid ${formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--border)'}`, 
+                                            color: formData.entityType === 'Customer' ? 'var(--primary)' : 'var(--text-muted)' 
+                                        }}
                                     >
-                                        From Customer
+                                        <ArrowDownLeft size={24} />
+                                        Collection
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, entityType: 'Supplier', entityId: '' })}
-                                        style={{ backgroundColor: formData.entityType === 'Supplier' ? '#fef2f2' : 'white', border: `1px solid ${formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--border)'}`, color: formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--text-muted)' }}
+                                        style={{ 
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            fontWeight: '800',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            backgroundColor: formData.entityType === 'Supplier' ? '#fef2f2' : 'white', 
+                                            border: `2px solid ${formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--border)'}`, 
+                                            color: formData.entityType === 'Supplier' ? 'var(--danger)' : 'var(--text-muted)' 
+                                        }}
                                     >
-                                        To Supplier
+                                        <ArrowUpRight size={24} />
+                                        Settlement
                                     </button>
                                 </div>
                             </div>
 
-                            <select
-                                required
-                                value={formData.entityId} onChange={e => setFormData({ ...formData, entityId: e.target.value })}
-                            >
-                                <option value="">Select {formData.entityType}</option>
-                                {entities.map(e => <option key={e._id} value={e._id}>{e.name} (Bal: {formData.entityType === 'Customer' ? e.outstandingReceivable : e.outstandingPayable})</option>)}
-                            </select>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-                                <input type="number" placeholder="Amount (PKR)" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} />
-                                <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}>
-                                    <option value="Cash">Cash</option>
-                                    <option value="Bank Transfer">Bank Transfer</option>
-                                    <option value="Cheque">Cheque</option>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>{formData.entityType === 'Customer' ? 'Customer Name' : 'Supplier Name'}</label>
+                                <select
+                                    required
+                                    value={formData.entityId} onChange={e => setFormData({ ...formData, entityId: e.target.value })}
+                                    style={{ fontWeight: '700' }}
+                                >
+                                    <option value="">Select Account...</option>
+                                    {entities.map(e => (
+                                        <option key={e._id} value={e._id}>
+                                            {e.name} (Bal: PKR {(formData.entityType === 'Customer' ? e.outstandingReceivable : e.outstandingPayable)?.toLocaleString()})
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
-                            <input type="text" placeholder="Note / Reference Number" value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Amount (PKR)</label>
+                                    <input type="number" placeholder="0.00" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) })} style={{ fontWeight: '900', fontSize: '1.1rem' }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Method</label>
+                                    <select value={formData.paymentMethod} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })} style={{ fontWeight: '700' }}>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Cheque">Cheque</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                            <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                                <button type="submit" className="primary" style={{ flex: 1 }}>Save Payment</button>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9' }}>Cancel</button>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Reference / Note</label>
+                                <input type="text" placeholder="Optional reference info..." value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                                <button type="submit" className="primary" style={{ flex: 2, padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                    Record Transaction <ArrowRight size={20} />
+                                </button>
+                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '800' }}>Cancel</button>
                             </div>
                         </form>
                     </div>

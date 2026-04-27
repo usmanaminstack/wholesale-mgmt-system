@@ -32,45 +32,57 @@ const DateFilter = ({ startDate, endDate, setStartDate, setEndDate, onClear }) =
     };
 
     return (
-        <div className="card" style={{ padding: '8px 16px', display: 'flex', gap: '8px', alignItems: 'center', border: '1px solid var(--border)', flexWrap: 'wrap', backgroundColor: '#f8fafc' }}>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                <button onClick={setToday} style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: startDate === endDate && startDate === getLocalDateString() ? 'var(--primary)' : 'white', color: startDate === endDate && startDate === getLocalDateString() ? 'white' : 'var(--text)', border: '1px solid var(--border)', fontWeight: '600' }}>Today</button>
-                <button onClick={setYesterday} style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', fontWeight: '600' }}>Yesterday</button>
-                <button onClick={setLast7Days} style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', fontWeight: '600' }}>Last 7D</button>
-                <button onClick={setThisMonth} style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', fontWeight: '600' }}>This Month</button>
+        <div className="card date-filter-container" style={{ padding: '12px', display: 'flex', gap: '12px', alignItems: 'center', border: '1px solid var(--border)', flexWrap: 'wrap', backgroundColor: '#fcfcfc', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }} className="date-presets">
+                <button onClick={setToday} style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', backgroundColor: startDate === endDate && startDate === getLocalDateString() ? 'var(--primary)' : 'white', color: startDate === endDate && startDate === getLocalDateString() ? 'white' : 'var(--text)', border: '1px solid var(--border)', fontWeight: '700' }}>Today</button>
+                <button onClick={setYesterday} style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', fontWeight: '700' }}>Yesterday</button>
+                <button onClick={setLast7Days} style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', fontWeight: '700' }}>7 Days</button>
+                <button onClick={setThisMonth} style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '8px', backgroundColor: 'white', color: 'var(--text)', border: '1px solid var(--border)', fontWeight: '700' }}>Month</button>
             </div>
-            <span style={{ color: 'var(--border)', margin: '0 4px' }}>|</span>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)' }}>From</span>
-                <Calendar size={14} color="var(--primary)" />
-                <input
-                    type="date"
-                    value={startDate}
-                    onChange={e => setStartDate(e.target.value)}
-                    style={{ padding: '4px', border: 'none', backgroundColor: 'transparent', boxShadow: 'none', fontSize: '0.8rem', fontWeight: '600' }}
-                />
+            
+            <div className="date-inputs-wrapper" style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <Calendar size={16} color="var(--primary)" />
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
+                        style={{ padding: '4px', border: 'none', backgroundColor: 'transparent', boxShadow: 'none', fontSize: '0.85rem', fontWeight: '700', width: 'auto' }}
+                    />
+                </div>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>to</span>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                        style={{ padding: '4px', border: 'none', backgroundColor: 'transparent', boxShadow: 'none', fontSize: '0.85rem', fontWeight: '700', width: 'auto' }}
+                    />
+                </div>
+                {onClear && (
+                    <button
+                        title="Clear Dates"
+                        onClick={onClear}
+                        style={{ background: 'none', color: 'var(--danger)', padding: '4px', marginLeft: '4px' }}
+                    >
+                        <X size={18} />
+                    </button>
+                )}
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)' }}>To</span>
-                <Calendar size={14} color="var(--primary)" />
-                <input
-                    type="date"
-                    value={endDate}
-                    onChange={e => setEndDate(e.target.value)}
-                    style={{ padding: '4px', border: 'none', backgroundColor: 'transparent', boxShadow: 'none', fontSize: '0.8rem', fontWeight: '600' }}
-                />
-            </div>
-            {onClear && (
-                <button
-                    title="Clear Dates"
-                    onClick={onClear}
-                    style={{ background: 'none', color: 'var(--danger)', padding: '4px', marginLeft: 'auto' }}
-                >
-                    <X size={14} />
-                </button>
-            )}
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media (max-width: 768px) {
+                    .date-filter-container { flex-direction: column !important; align-items: stretch !important; gap: 16px !important; }
+                    .date-presets { justify-content: space-between !important; }
+                    .date-presets button { flex: 1; text-align: center; }
+                    .date-inputs-wrapper { justify-content: space-around !important; border-top: 1px solid var(--border); padding-top: 12px; }
+                    .date-inputs-wrapper input { width: 120px !important; }
+                }
+            `}} />
         </div>
     );
 };
 
 export default DateFilter;
+
