@@ -142,8 +142,8 @@ const Suppliers = () => {
                                         </div>
                                     </td>
                                     <td data-label="Actions" style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => { setSelectedSupplier(s); setShowLedgerModal(true); fetchLedger(s._id); }} style={{ padding: '10px 20px', backgroundColor: '#fff7ed', color: '#f59e0b', fontWeight: '800', fontSize: '0.85rem', borderRadius: '12px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} className="action-btn">
+                                            <button onClick={() => { setSelectedSupplier(s); setShowLedgerModal(true); fetchLedger(s._id); }} style={{ padding: '10px 16px', backgroundColor: '#fff7ed', color: '#f59e0b', fontWeight: '800', fontSize: '0.8rem', borderRadius: '12px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                                                 <History size={16} /> History
                                             </button>
                                             <button onClick={() => handleDeleteSupplier(s._id)} style={{ padding: '10px', color: 'var(--danger)', backgroundColor: '#fef2f2', borderRadius: '12px', border: 'none', cursor: 'pointer' }}>
@@ -159,8 +159,8 @@ const Suppliers = () => {
             </div>
 
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card" style={{ width: '90%', maxWidth: '450px', padding: '32px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '450px' }}>
                         <h3 style={{ marginTop: 0, fontWeight: '800', fontSize: '1.5rem' }}>New Supplier</h3>
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '24px' }}>
                             <div>
@@ -189,8 +189,8 @@ const Suppliers = () => {
             )}
 
             {showLedgerModal && selectedSupplier && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '20px' }}>
-                    <div className="card modal-content" style={{ width: '100%', maxWidth: '1000px', maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: '24px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '1000px', padding: 0, overflow: 'hidden' }}>
                         {/* Header */}
                         <div style={{ padding: '32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(to right, #fff7ed, #ffffff)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

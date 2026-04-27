@@ -181,7 +181,7 @@ const Purchases = () => {
                                         {p.balanceAmount > 0 ? `PKR ${p.balanceAmount.toLocaleString()}` : 'SETTLED'}
                                     </td>
                                     <td data-label="Actions" style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} className="action-btn">
                                             <button onClick={() => handleEditClick(p)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Edit Entry"><Edit size={18} /></button>
                                             <button onClick={() => handleDeletePurchase(p._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Delete Entry"><Trash2 size={18} /></button>
                                         </div>
@@ -197,8 +197,8 @@ const Purchases = () => {
             </div>
 
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '16px' }}>
-                    <div className="card" style={{ width: '100%', maxWidth: '900px', maxHeight: '92vh', overflowY: 'auto', padding: '32px', borderRadius: '24px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '900px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                 <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

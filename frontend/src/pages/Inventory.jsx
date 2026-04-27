@@ -206,10 +206,10 @@ const Inventory = () => {
                                         </div>
                                     </td>
                                     <td data-label="Actions" style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => { setEditingProduct(p); setAdjustmentData({ pieces: 0, reason: '' }); setShowAdjustModal(true); }} style={{ background: '#f0fdf4', color: 'var(--success)', padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer' }} title="Adjust Stock"><ArrowUpRight size={18} /></button>
-                                            <button onClick={() => handleEdit(p)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer' }}><Edit2 size={18} /></button>
-                                            <button onClick={() => handleDeleteProduct(p._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} className="action-btn">
+                                            <button onClick={() => { setEditingProduct(p); setAdjustmentData({ pieces: 0, reason: '' }); setShowAdjustModal(true); }} style={{ background: '#f0fdf4', color: 'var(--success)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Adjust Stock"><ArrowUpRight size={18} /></button>
+                                            <button onClick={() => handleEdit(p)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Edit"><Edit2 size={18} /></button>
+                                            <button onClick={() => handleDeleteProduct(p._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Delete"><Trash2 size={18} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -220,8 +220,8 @@ const Inventory = () => {
             </div>
 
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card" style={{ width: '90%', maxWidth: '550px', padding: '32px', maxHeight: '95vh', overflowY: 'auto' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '550px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                             <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>{editingProduct ? 'Update Product' : 'New Product'}</h3>
                             <button onClick={() => setShowModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
@@ -285,8 +285,8 @@ const Inventory = () => {
             )}
 
             {showAdjustModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card" style={{ width: '90%', maxWidth: '400px', padding: '32px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <h3 style={{ margin: 0, fontWeight: '900' }}>Stock Adjustment</h3>
                             <button onClick={() => setShowAdjustModal(false)} style={{ background: '#f1f5f9', border: 'none', padding: '6px', borderRadius: '8px' }}><X size={20} /></button>

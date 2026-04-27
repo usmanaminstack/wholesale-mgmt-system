@@ -27,38 +27,39 @@ const Layout = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '0 24px',
-                    backgroundColor: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(12px)',
                     borderBottom: '1px solid var(--border)',
                     position: 'sticky',
                     top: 0,
                     zIndex: 30,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
                 }}
                     className="app-header"
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className="mobile-only" onClick={() => setIsSidebarOpen(true)} style={{ color: 'var(--text)', cursor: 'pointer' }}>
+                        <div className="mobile-only" onClick={() => setIsSidebarOpen(true)} style={{ color: 'var(--text)', cursor: 'pointer', padding: '8px', marginLeft: '-8px' }}>
                             <Menu size={24} />
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }} className="mobile-only">
-                                <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
+                                <img src={logo} alt="Logo" style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
                             </div>
-                            <h2 className="brand-font" style={{ fontSize: '1.4rem', fontWeight: '900', margin: 0, color: 'var(--text)', letterSpacing: '-0.025em' }}>Guddu Traders</h2>
+                            <h2 className="brand-font" style={{ fontSize: '1.25rem', fontWeight: '950', margin: 0, color: 'var(--text)', letterSpacing: '-0.04em' }}>GUDDU <span style={{ color: 'var(--primary)' }}>TRADERS</span></h2>
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <button className="desktop-only" style={{ background: 'none', color: 'var(--text-muted)' }}><Search size={20} /></button>
-                        <button style={{ background: 'none', color: 'var(--text-muted)', padding: '8px' }}><Bell size={22} /></button>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px', borderRadius: '50%', backgroundColor: 'var(--primary-light)' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.8rem' }}>U</div>
-                            <span style={{ fontSize: '0.9rem', fontWeight: '700', paddingRight: '12px', color: 'var(--primary-dark)' }} className="desktop-only">Admin</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px 4px 4px', borderRadius: '30px', backgroundColor: '#f8fafc', border: '1px solid var(--border)' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.75rem', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.3)' }}>U</div>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                Admin <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
+                            </span>
                         </div>
                     </div>
                 </header>
 
-                <main style={{ padding: '32px', flex: 1 }}>
+                <main style={{ padding: '32px', flex: 1, backgroundColor: 'var(--bg)' }}>
                     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                         <Outlet />
                     </div>

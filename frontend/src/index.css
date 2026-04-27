@@ -362,6 +362,60 @@ label {
   }
 }
 
+/* Modern Table Mobile Cards */
+@media (max-width: 768px) {
+    .modern-table thead { display: none; }
+    .modern-table, .modern-table tbody, .modern-table tr, .modern-table td { display: block; width: 100%; }
+    .modern-table tr { margin-bottom: 16px; background: white; border-radius: 16px; border: 1px solid var(--border); padding: 8px; }
+    .modern-table td { text-align: right; padding: 12px 16px; position: relative; border-bottom: 1px solid #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+    .modern-table td:last-child { border-bottom: none; }
+    .modern-table td::before { content: attr(data-label); font-weight: 800; text-transform: uppercase; font-size: 0.7rem; color: var(--text-muted); }
+    
+    /* Increased Touch Targets */
+    button, a { min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center; }
+    .action-btn { gap: 16px !important; } /* Increase gap between Edit/Delete */
+}
+
+/* Modal Keyboard Fix */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Align to bottom on mobile for easier thumb reach */
+    z-index: 1000;
+}
+
+@media (min-width: 769px) {
+    .modal-overlay { align-items: center; }
+}
+
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 24px 24px 0 0; /* Drawer style on mobile */
+    padding: 32px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+    animation: slideUp 0.3s ease-out;
+}
+
+@media (min-width: 769px) {
+    .modal-content {
+        border-radius: 24px;
+        margin: 20px;
+    }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
 /* POS Receipt Styles (Optimized) */
 .pos-receipt {
   width: 100%;

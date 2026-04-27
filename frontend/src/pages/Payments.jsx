@@ -145,7 +145,9 @@ const Payments = () => {
                                         </div>
                                     </td>
                                     <td data-label="Actions" style={{ textAlign: 'right' }}>
-                                        <button onClick={() => handleDelete(p._id)} style={{ padding: '10px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '12px', cursor: 'pointer' }} title="Remove Entry"><Trash2 size={18} /></button>
+                                        <div className="action-btn" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => handleDelete(p._id)} style={{ padding: '10px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '12px', cursor: 'pointer' }} title="Remove Entry"><Trash2 size={18} /></button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -160,8 +162,8 @@ const Payments = () => {
             </div>
 
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '16px' }}>
-                    <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '32px', borderRadius: '24px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '480px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                             <h3 style={{ margin: 0, fontWeight: '900', fontSize: '1.5rem' }}>Record Cash Flow</h3>
                             <button onClick={() => setShowModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>

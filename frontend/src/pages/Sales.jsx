@@ -245,10 +245,10 @@ const Sales = () => {
                                         </span>
                                     </td>
                                     <td data-label="Actions" style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => { setSelectedSale(s); setShowViewModal(true); }} style={{ background: '#f8fafc', color: 'var(--primary)', padding: '10px', borderRadius: '10px' }} title="View"><Eye size={18} /></button>
-                                            <button onClick={() => handleEditClick(s)} style={{ background: '#f8fafc', color: 'var(--accent)', padding: '10px', borderRadius: '10px' }} title="Edit"><Edit size={18} /></button>
-                                            <button onClick={() => handleDeleteSale(s._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '10px' }} title="Delete"><Trash2 size={18} /></button>
+                                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} className="action-btn">
+                                            <button onClick={() => { setSelectedSale(s); setShowViewModal(true); }} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }} title="View"><Eye size={18} /></button>
+                                            <button onClick={() => handleEditClick(s)} style={{ background: 'var(--primary-light)', color: 'var(--accent)', padding: '10px', borderRadius: '12px' }} title="Edit"><Edit size={18} /></button>
+                                            <button onClick={() => handleDeleteSale(s._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px' }} title="Delete"><Trash2 size={18} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -259,8 +259,8 @@ const Sales = () => {
             </div>
 
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card modal-content" style={{ width: '95%', maxWidth: '1000px', maxHeight: '92vh', overflowY: 'auto', padding: '32px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '1000px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                             <h2 style={{ margin: 0, fontWeight: '800' }}>{isEditing ? 'Update Sale' : 'New Sale'}</h2>
                             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -410,8 +410,8 @@ const Sales = () => {
             )}
 
             {showViewModal && selectedSale && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card" style={{ width: '95%', maxWidth: '400px', maxHeight: '92vh', overflowY: 'auto', padding: '24px', borderRadius: '24px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '450px' }}>
                         <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <h3 style={{ margin: 0 }}>Invoice Receipt</h3>
                             <div style={{ display: 'flex', gap: '8px' }}>
