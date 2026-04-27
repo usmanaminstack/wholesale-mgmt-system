@@ -197,7 +197,7 @@ const Dashboard = () => {
                             <strong>{stats.zeroCostProductsCount} products</strong> have no cost price set. This makes profit reports inaccurate.
                         </p>
                     </div>
-                    <Link to="/inventory" style={{ backgroundColor: '#d97706', color: 'white', padding: '10px 20px', borderRadius: '12px', fontWeight: '700', textDecoration: 'none', fontSize: '0.9rem' }}>Fix Now</Link>
+                    <Link to="/inventory" className="mobile-full-width" style={{ backgroundColor: '#d97706', color: 'white', padding: '10px 20px', borderRadius: '12px', fontWeight: '700', textDecoration: 'none', fontSize: '0.9rem', textAlign: 'center' }}>Fix Now</Link>
                 </div>
             )}
 
@@ -259,7 +259,10 @@ const Dashboard = () => {
                             <TrendingUp size={40} />
                         </div>
                         <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: '800' }}>{periodLabel} Net Profit</h3>
-                        <h2 style={{ margin: '8px 0', fontSize: '3rem', fontWeight: '900', color: 'var(--success)', letterSpacing: '-0.05em' }}>PKR {stats?.todayProfit?.toLocaleString()}</h2>
+                        <h2 style={{ margin: '8px 0', fontSize: 'var(--profit-size, 3rem)', fontWeight: '900', color: 'var(--success)', letterSpacing: '-0.05em' }}>
+                            <span style={{ fontSize: '0.4em', color: 'var(--text-muted)', marginRight: '8px', verticalAlign: 'middle' }}>PKR</span>
+                            {stats?.todayProfit?.toLocaleString()}
+                        </h2>
                     </div>
                     <Link to="/reports" className="primary" style={{ textDecoration: 'none', padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         Full Analysis <ExternalLink size={18} />
@@ -338,11 +341,12 @@ const Dashboard = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-               :root { --h1-size: 2rem; }
+               :root { --h1-size: 2rem; --profit-size: 3rem; }
                @media (max-width: 768px) {
-                 :root { --h1-size: 1.5rem; }
+                 :root { --h1-size: 1.5rem; --profit-size: 2.2rem; }
                  .page-header { margin-bottom: 20px !important; }
                  .stat-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+                 .mobile-full-width { width: 100%; }
                }
                @media (max-width: 900px) {
                  .dashboard-grid { grid-template-columns: 1fr !important; }

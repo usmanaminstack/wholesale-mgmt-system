@@ -21,7 +21,7 @@ const Layout = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 9999,
+                    zIndex: 'var(--z-loader)',
                     gap: '16px'
                 }}>
                     <div style={{ position: 'relative' }}>
@@ -81,11 +81,11 @@ const Layout = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px 4px 4px', borderRadius: '30px', backgroundColor: '#f8fafc', border: '1px solid var(--border)' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.75rem', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.3)' }}>U</div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                Admin <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px 4px 4px', borderRadius: '30px', backgroundColor: '#f8fafc', border: '1px solid var(--border)', maxWidth: '140px' }}>
+                            <div style={{ width: '32px', height: '32px', flexShrink: 0, borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.75rem', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.3)' }}>U</div>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                Admin
                             </span>
                         </div>
                     </div>

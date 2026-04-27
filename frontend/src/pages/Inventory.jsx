@@ -9,6 +9,7 @@ const Inventory = () => {
     const [editingProduct, setEditingProduct] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [showInactive, setShowInactive] = useState(false);
+    const [productToDelete, setProductToDelete] = useState(null);
     const [adjustmentData, setAdjustmentData] = useState({ pieces: 0, reason: '' });
     const [formData, setFormData] = useState({
         name: '',
@@ -57,14 +58,19 @@ const Inventory = () => {
         }
     };
 
-    const handleDeleteProduct = async (id) => {
-        if (window.confirm('Are you sure you want to delete this product? This may affect historical reports.')) {
-            try {
-                await api.delete(`/products/${id}`);
-                fetchProducts();
-            } catch (err) {
-                alert(err.message);
-            }
+    const requestDeleteProduct = (id) => {
+        const product = products.find(p => p._id === id);
+        if(product) setProductToDelete(product);
+    };
+
+    const confirmDeleteProduct = async () => {
+        if (!productToDelete) return;
+        try {
+            await api.delete(`/products/${productToDelete._id}`);
+            setProductToDelete(null);
+            fetchProducts();
+        } catch (err) {
+            alert(err.message);
         }
     };
 
@@ -168,7 +174,12 @@ const Inventory = () => {
                                                 <Package size={20} color="var(--primary)" />
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: '800', color: 'var(--text)', fontSize: '0.95rem' }}>{p.name}</div>
+                                                <div style={{ fontWeight: '800', color: 'var(--text)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {p.name}
+                                                    {(!p.costPricePerCarton || p.costPricePerCarton <= 0) && (
+                                                        <span title="Missing Cost Price" style={{ color: 'var(--danger)', display: 'flex' }}><AlertTriangle size={14} /></span>
+                                                    )}
+                                                </div>
                                                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                                                     <span style={{ padding: '2px 8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800' }}>{p.category}</span>
                                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>{p.piecesPerCarton} Pcs/Ctn</span>
@@ -205,7 +216,7 @@ const Inventory = () => {
                                                 {p.stockInPieces} {p.stockInPieces <= p.lowStockThreshold && <AlertTriangle size={16} />}
                                             </div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700' }}>
-                                                ≈ {(p.stockInPieces / p.piecesPerCarton).toFixed(1)} Cartons
+                                                ≈ {p.piecesPerCarton ? (p.stockInPieces / p.piecesPerCarton).toFixed(1) : 0} Cartons
                                             </div>
                                         </div>
                                     </td>
@@ -213,13 +224,23 @@ const Inventory = () => {
                                         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }} className="action-btn">
                                             <button onClick={() => { setEditingProduct(p); setAdjustmentData({ pieces: 0, reason: '' }); setShowAdjustModal(true); }} style={{ background: '#f0fdf4', color: 'var(--success)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Adjust Stock"><ArrowUpRight size={18} /></button>
                                             <button onClick={() => handleEdit(p)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Edit"><Edit2 size={18} /></button>
-                                            <button onClick={() => handleDeleteProduct(p._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Delete"><Trash2 size={18} /></button>
+                                            <button onClick={() => requestDeleteProduct(p._id)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer' }} title="Delete"><Trash2 size={18} /></button>
                                         </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                    
+                    {filteredProducts.length === 0 && (
+                        <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: 'white', borderRadius: '0 0 20px 20px' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#f1f5f9', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                                <Package size={32} />
+                            </div>
+                            <h3 style={{ margin: '0 0 8px 0', fontWeight: '800', color: 'var(--text)' }}>No Products Found</h3>
+                            <p style={{ margin: 0, color: 'var(--text-muted)' }}>We couldn't find any items matching your search criteria.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -324,6 +345,24 @@ const Inventory = () => {
                                 <button type="button" onClick={() => setShowAdjustModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: '16px', fontWeight: '800' }}>Cancel</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {productToDelete && (
+                <div className="modal-overlay" style={{ zIndex: 'var(--z-modal)' }}>
+                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--danger)', marginBottom: '16px' }}>
+                            <AlertTriangle size={32} />
+                        </div>
+                        <h3 style={{ margin: '0 0 8px 0', fontWeight: '900', fontSize: '1.5rem' }}>Delete Product?</h3>
+                        <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                            Are you sure you want to delete <strong>{productToDelete.name}</strong>? This action cannot be undone and may affect historical reports.
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button onClick={() => setProductToDelete(null)} style={{ flex: 1, backgroundColor: '#f1f5f9', color: 'var(--text)', padding: '14px', borderRadius: '12px', fontWeight: '700' }}>Cancel</button>
+                            <button onClick={confirmDeleteProduct} style={{ flex: 1, backgroundColor: 'var(--danger)', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '700', border: 'none' }}>Yes, Delete</button>
+                        </div>
                     </div>
                 </div>
             )}
