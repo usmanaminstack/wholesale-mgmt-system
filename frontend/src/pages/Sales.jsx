@@ -491,18 +491,27 @@ const Sales = () => {
                             <table className="pos-receipt-table">
                                 <thead>
                                     <tr>
-                                        <th>ITEM</th>
-                                        <th style={{ textAlign: 'right' }}>TOTAL</th>
+                                        <th style={{ textAlign: 'left', width: '40%' }}>ITEM</th>
+                                        <th style={{ textAlign: 'center', width: '15%' }}>QTY</th>
+                                        <th style={{ textAlign: 'right', width: '20%' }}>PRICE</th>
+                                        <th style={{ textAlign: 'right', width: '25%' }}>TOTAL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {selectedSale.items.map((item, idx) => (
                                         <tr key={idx}>
-                                            <td>
+                                            <td style={{ textAlign: 'left' }}>
                                                 <span className="pos-item-name">{item.product?.name || 'Item'}</span>
-                                                <span className="pos-item-meta">{item.quantity} {item.unit} @ {item.priceAtSale.toLocaleString()}</span>
                                             </td>
-                                            <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '800', fontSize: '15px' }}>{item.totalPrice.toLocaleString()}</td>
+                                            <td style={{ textAlign: 'center', verticalAlign: 'top', fontWeight: '700', fontSize: '12px' }}>
+                                                {item.quantity}<span style={{fontSize: '9px', display:'block', color: 'var(--text-muted)'}}>{item.unit}</span>
+                                            </td>
+                                            <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '600', fontSize: '12px' }}>
+                                                {item.priceAtSale.toLocaleString()}
+                                            </td>
+                                            <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontSize: '13px' }}>
+                                                {item.totalPrice.toLocaleString()}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

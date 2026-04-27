@@ -188,7 +188,7 @@ label {
   /* Main Content Spacing */
   main {
     padding: 16px !important;
-    padding-bottom: 100px !important; /* Space for bottom nav */
+    padding-bottom: 24px !important;
   }
 
   /* Dashboard Stat Cards - Stack better and clear visibility */

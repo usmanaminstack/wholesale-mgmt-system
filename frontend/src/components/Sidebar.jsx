@@ -125,29 +125,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         </div>
       </div>
 
-      <div className="bottom-nav mobile-only">
-        <NavLink to="/" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
-          <LayoutDashboard size={22} />
-          <span>Home</span>
-        </NavLink>
-        <NavLink to="/sales" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
-          <ShoppingCart size={22} />
-          <span>Sales</span>
-        </NavLink>
-        <NavLink to="/inventory" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
-          <Package size={22} />
-          <span>Items</span>
-        </NavLink>
-        <NavLink to="/reports" className={({ isActive }) => isActive ? "bottom-nav-item active" : "bottom-nav-item"}>
-          <BarChart3 size={22} />
-          <span>Profit</span>
-        </NavLink>
-        <button className="bottom-nav-item" onClick={(e) => { e.preventDefault(); toggleSidebar(); }}>
-          <Menu size={22} />
-          <span>Menu</span>
-        </button>
-      </div>
-
+      {/* Bottom Nav Removed per user request */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @media (min-width: 769px) {

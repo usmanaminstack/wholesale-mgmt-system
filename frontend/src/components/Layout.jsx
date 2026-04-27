@@ -105,7 +105,7 @@ const Layout = () => {
           .mobile-only { display: none !important; }
         }
         @media (max-width: 768px) {
-          main { padding: 20px !important; padding-bottom: 100px !important; }
+          main { padding: 20px !important; padding-bottom: 24px !important; }
           header { padding: 0 16px !important; height: 64px !important; }
           .brand-font { font-size: 1.2rem !important; }
         }
