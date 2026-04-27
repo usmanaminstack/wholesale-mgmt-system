@@ -1,14 +1,44 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Bell, Search, Menu, Loader2 } from 'lucide-react';
+import { useLoading } from '../context/LoadingContext';
 import logo from '../assets/logo.png';
 
 const Layout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { loading } = useLoading();
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
+            {loading && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    gap: '16px'
+                }}>
+                    <div style={{ position: 'relative' }}>
+                        <Loader2 className="animate-spin" size={48} color="var(--primary)" />
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--primary-light)' }}></div>
+                        </div>
+                    </div>
+                    <p style={{ fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.05em', fontSize: '0.9rem' }}>LOADING...</p>
+                </div>
+            )}
             <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
 
             <div style={{
@@ -16,7 +46,9 @@ const Layout = () => {
                 paddingLeft: '0',
                 transition: 'padding-left 0.3s ease',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                position: 'relative',
+                zIndex: 10
             }}
                 className="main-content"
             >

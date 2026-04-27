@@ -98,13 +98,17 @@ const Inventory = () => {
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
                         onClick={() => { setEditingProduct(null); setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', lowStockThreshold: 10 }); setShowModal(true); }}
-                        className="primary"
+                        className="primary desktop-only"
                         style={{ padding: '14px 28px', borderRadius: '14px' }}
                     >
                         <Plus size={20} /> Add Product
                     </button>
                 </div>
             </div>
+
+            <button onClick={() => { setEditingProduct(null); setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', lowStockThreshold: 10 }); setShowModal(true); }} className="fab-button mobile-only" title="Add Product">
+                <Plus size={32} />
+            </button>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', borderLeft: '6px solid var(--primary)' }}>

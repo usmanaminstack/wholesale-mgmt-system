@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import DateFilter from '../components/DateFilter';
-import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download } from 'lucide-react';
+import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download, Share2, CheckCircle2, Search } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
 
 const Sales = () => {
@@ -15,6 +16,8 @@ const Sales = () => {
     const [selectedSale, setSelectedSale] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [showOutOfStock, setShowOutOfStock] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [lastCreatedInvoice, setLastCreatedInvoice] = useState(null);
 
     const [formData, setFormData] = useState({
         customer: '',
@@ -121,19 +124,48 @@ const Sales = () => {
                 totalAmount
             };
 
+            let response;
             if (isEditing) {
-                await api.put(`/sales/${selectedSale._id}`, submissionData);
+                response = await api.put(`/sales/${selectedSale._id}`, submissionData);
             } else {
-                await api.post('/sales', submissionData);
+                response = await api.post('/sales', submissionData);
+            }
+
+            if (!isEditing) {
+                setLastCreatedInvoice(response.data.sale || response.data);
+                setShowSuccessModal(true);
             }
 
             setShowModal(false);
             setIsEditing(false);
             setSelectedSale(null);
-            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, isRetail: true, items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
+            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
             fetchSales();
         } catch (err) {
-            alert(err.response?.data?.message || err.message);
+            console.error(err);
+        }
+    };
+
+    const handleShare = async () => {
+        const shareText = `Invoice #${lastCreatedInvoice._id.slice(-6).toUpperCase()} from Guddu Traders for PKR ${lastCreatedInvoice.totalAmount.toLocaleString()}`;
+        if (navigator.share && lastCreatedInvoice) {
+            try {
+                await navigator.share({
+                    title: 'Invoice from Guddu Traders',
+                    text: shareText,
+                    url: window.location.href,
+                });
+            } catch (err) {
+                console.log('Error sharing:', err);
+            }
+        } else {
+            // Fallback: Copy to clipboard
+            try {
+                await navigator.clipboard.writeText(`${shareText}\n${window.location.href}`);
+                toast.success('Invoice details copied to clipboard!');
+            } catch (err) {
+                toast.error('Failed to copy to clipboard');
+            }
         }
     };
 
@@ -191,11 +223,15 @@ const Sales = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="primary" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> New Sale
                     </button>
                 </div>
             </div>
+
+            <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
+                <Plus size={32} />
+            </button>
 
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
@@ -315,9 +351,14 @@ const Sales = () => {
                             </div>
 
                             <div style={{ marginBottom: '32px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px' }}>
                                     <h3 style={{ margin: 0, fontWeight: '700' }}>Order Items</h3>
-                                    <button type="button" onClick={addItem} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 20px', borderRadius: '12px' }}>+ Add Item</button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button type="button" onClick={() => toast.success('Barcode Scanner Initializing...')} style={{ backgroundColor: '#f1f5f9', color: 'var(--text)', padding: '10px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Search size={18} /> <span className="desktop-only">Scan</span>
+                                        </button>
+                                        <button type="button" onClick={addItem} style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 20px', borderRadius: '12px', fontWeight: '700' }}>+ Add Item</button>
+                                    </div>
                                 </div>
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -424,71 +465,122 @@ const Sales = () => {
                         <div id="receipt-print-area" className="pos-receipt">
                             <div className="pos-receipt-header">
                                 <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
-                                <p style={{ margin: '4px 0', fontSize: '12px', fontWeight: '700' }}>Wholesale Distributor</p>
-                                <p style={{ margin: '0', fontSize: '11px' }}>Ph: 03xx-xxxxxxx</p>
-                            </div>
-
-                            <div style={{ marginBottom: '16px', fontSize: '12px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                    <span><strong>ID:</strong> {selectedSale._id.slice(-6).toUpperCase()}</span>
-                                    <span>{new Date(selectedSale.saleDate).toLocaleDateString()}</span>
+                                <div className="pos-receipt-subtitle">Wholesale & Retail Distributor</div>
+                                <div style={{ fontSize: '10px', marginTop: '4px' }}>
+                                    Main Bazar Road, Guddu Trader Shop <br />
+                                    Phone: 0300-1234567 | 0311-7654321
                                 </div>
-                                <div><strong>Client:</strong> {selectedSale.customer?.name || selectedSale.customerName || 'Walk-in'}</div>
-                                <div><strong>Type:</strong> {selectedSale.isRetail ? 'Retail' : 'Wholesale'}</div>
                             </div>
 
-                            <table className="pos-receipt-table" style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+                            <div style={{ marginBottom: '15px', borderBottom: '1px solid #000', paddingBottom: '10px' }}>
+                                <div className="pos-receipt-info">
+                                    <span><strong>INVOICE NO:</strong></span>
+                                    <span>#{selectedSale._id.slice(-6).toUpperCase()}</span>
+                                </div>
+                                <div className="pos-receipt-info">
+                                    <span><strong>DATE:</strong></span>
+                                    <span>{new Date(selectedSale.saleDate).toLocaleDateString()} {new Date(selectedSale.saleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <div className="pos-receipt-info">
+                                    <span><strong>CUSTOMER:</strong></span>
+                                    <span style={{ fontWeight: '800' }}>{selectedSale.customer?.name || selectedSale.customerName || 'WALK-IN GUEST'}</span>
+                                </div>
+                                <div className="pos-receipt-info">
+                                    <span><strong>SALE TYPE:</strong></span>
+                                    <span>{selectedSale.isRetail ? 'RETAIL SALE' : 'WHOLESALE SALE'}</span>
+                                </div>
+                            </div>
+
+                            <table className="pos-receipt-table">
                                 <thead>
-                                    <tr style={{ borderBottom: '2px solid #000' }}>
-                                        <th style={{ textAlign: 'left', padding: '8px 0' }}>Item</th>
-                                        <th style={{ textAlign: 'center', padding: '8px 0' }}>Qty</th>
-                                        <th style={{ textAlign: 'right', padding: '8px 0' }}>Total</th>
+                                    <tr>
+                                        <th style={{ textAlign: 'left' }}>ITEM DESCRIPTION</th>
+                                        <th style={{ textAlign: 'center' }}>QTY</th>
+                                        <th style={{ textAlign: 'right' }}>TOTAL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {selectedSale.items.map((item, idx) => (
-                                        <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                                            <td style={{ padding: '8px 0' }}>
-                                                <div style={{ fontWeight: '700' }}>{item.product?.name || 'Item'}</div>
-                                                <div style={{ fontSize: '10px', color: '#666' }}>@{item.priceAtSale.toLocaleString()}</div>
+                                        <tr key={idx}>
+                                            <td style={{ textAlign: 'left' }}>
+                                                <span className="pos-item-name">{item.product?.name || 'Item'}</span>
+                                                <span className="pos-item-meta">{item.quantity} {item.unit} x {item.priceAtSale.toLocaleString()}</span>
                                             </td>
-                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                            <td style={{ textAlign: 'right', fontWeight: '700' }}>{item.totalPrice.toLocaleString()}</td>
+                                            <td style={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: '700' }}>{item.quantity}</td>
+                                            <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '800' }}>{item.totalPrice.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
 
-                            <div className="pos-total-section" style={{ borderTop: '2px solid #000', paddingTop: '12px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                    <span>Gross Total</span>
+                            <div className="pos-total-section">
+                                <div className="pos-total-row">
+                                    <span>SUBTOTAL</span>
                                     <span>{selectedSale.totalAmount.toLocaleString()}</span>
                                 </div>
                                 {(selectedSale.discount || 0) > 0 && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--accent)' }}>
-                                        <span>Discount</span>
-                                        <span>-{(selectedSale.discount || 0).toLocaleString()}</span>
+                                    <div className="pos-total-row" style={{ color: '#ef4444' }}>
+                                        <span>DISCOUNT</span>
+                                        <span>-{selectedSale.discount.toLocaleString()}</span>
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: '900', fontSize: '16px' }}>
+                                <div className="pos-net-total">
                                     <span>NET TOTAL</span>
                                     <span>PKR {(selectedSale.totalAmount - (selectedSale.discount || 0)).toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                    <span>Received</span>
+                                <div className="pos-total-row">
+                                    <span>CASH RECEIVED</span>
                                     <span>{selectedSale.receivedAmount.toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', color: selectedSale.balanceAmount > 0 ? '#e11d48' : '#059669' }}>
-                                    <span>BALANCE</span>
+                                <div className="pos-total-row" style={{ 
+                                    color: selectedSale.balanceAmount > 0 ? '#e11d48' : '#059669',
+                                    fontSize: '15px',
+                                    fontWeight: '900',
+                                    marginTop: '4px',
+                                    padding: '8px',
+                                    backgroundColor: selectedSale.balanceAmount > 0 ? '#fff1f2' : '#f0fdf4',
+                                    borderRadius: '8px'
+                                }}>
+                                    <span>{selectedSale.balanceAmount > 0 ? 'BALANCE DUE' : 'FULLY PAID'}</span>
                                     <span>PKR {selectedSale.balanceAmount.toLocaleString()}</span>
                                 </div>
                             </div>
 
-                            <div className="pos-footer" style={{ marginTop: '24px', textAlign: 'center', fontSize: '11px', borderTop: '1px dashed #ccc', paddingTop: '12px' }}>
-                                Software by Guddu Traders <br />
-                                <strong>THANK YOU FOR YOUR BUSINESS</strong>
+                            <div className="pos-footer">
+                                * CUSTOMER COPY * <br />
+                                <div style={{ fontSize: '11px', margin: '8px 0', fontWeight: '800' }}>THANK YOU FOR YOUR VISIT!</div>
+                                PLEASE VISIT AGAIN <br />
+                                <span style={{ fontSize: '8px', opacity: 0.6 }}>Software by Guddu Traders Management System</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showSuccessModal && lastCreatedInvoice && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '40px' }}>
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#dcfce7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <CheckCircle2 size={48} />
+                        </div>
+                        <h2 style={{ margin: '0 0 8px 0', fontWeight: '900' }}>Invoice Created!</h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>Invoice #{lastCreatedInvoice._id.slice(-6).toUpperCase()} has been saved successfully.</p>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                            <button onClick={() => { setSelectedSale(lastCreatedInvoice); printInvoice(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <Printer size={18} /> Print
+                            </button>
+                            <button onClick={() => { setSelectedSale(lastCreatedInvoice); downloadPDF(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <Download size={18} /> PDF
+                            </button>
+                        </div>
+                        <button onClick={handleShare} style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#f1f5f9', color: 'var(--text)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
+                            <Share2 size={18} /> Share Invoice
+                        </button>
+                        
+                        <button onClick={() => setShowSuccessModal(false)} style={{ width: '100%', padding: '16px', borderRadius: '16px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', fontWeight: '900', fontSize: '1rem', cursor: 'pointer' }}>
+                            Done & Close
+                        </button>
                     </div>
                 </div>
             )}
@@ -504,11 +596,12 @@ const Sales = () => {
               @media (max-width: 768px) {
                 .header-actions { width: 100%; }
                 .header-actions button { width: 100%; }
-                .invoice-row { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+                .invoice-row { grid-template-columns: 1fr 1fr !important; gap: 12px !important; padding: 12px !important; }
                 .invoice-row > div:first-child { grid-column: span 2; }
-                .invoice-row label { display: block !important; font-size: 0.75rem; margin-bottom: 4px; color: var(--text-muted); font-weight: 700; }
-                .invoice-row button { grid-column: span 2; margin-top: 8px; }
-                .modal-content { padding: 20px !important; }
+                .invoice-row > div:nth-child(5) { grid-column: span 2; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 4px; }
+                .invoice-row label { display: block !important; font-size: 0.7rem; margin-bottom: 2px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+                .invoice-row button { grid-column: span 2; margin-top: 4px; height: 40px !important; }
+                .modal-content { padding: 16px !important; }
               }
             `}} />
         </div>

@@ -110,11 +110,11 @@ const Dashboard = () => {
         <div className="animate-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }} className="page-header">
                 <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '-0.025em', marginBottom: '4px', color: 'var(--text)' }}>
+                    <h1 style={{ fontSize: 'var(--h1-size, 2rem)', fontWeight: '900', letterSpacing: '-0.025em', marginBottom: '4px', color: 'var(--text)' }}>
                         <span style={{ color: 'var(--primary)' }}>Guddu</span> Traders
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Activity size={16} color="var(--primary)" /> Premium Cold Drink Wholesale Distribution
+                    <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                        <Activity size={14} color="var(--primary)" /> Premium Cold Drink Wholesale
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -131,7 +131,7 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            <div style={{
+            <div className="stat-grid" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '20px',
@@ -311,8 +311,8 @@ const Dashboard = () => {
             </div>
 
             {showAdjustModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-                    <div className="card" style={{ width: '90%', maxWidth: '400px', padding: '32px' }}>
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px', padding: '32px' }}>
                         <h3 style={{ margin: '0 0 24px 0', fontWeight: '800' }}>Adjust {adjustData.accountType}</h3>
                         <form onSubmit={handleAdjustSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '6px', borderRadius: '12px' }}>
@@ -338,9 +338,16 @@ const Dashboard = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-              @media (max-width: 900px) {
-                .dashboard-grid { grid-template-columns: 1fr !important; }
-              }
+               :root { --h1-size: 2rem; }
+               @media (max-width: 768px) {
+                 :root { --h1-size: 1.5rem; }
+                 .page-header { margin-bottom: 20px !important; }
+                 .stat-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+               }
+               @media (max-width: 900px) {
+                 .dashboard-grid { grid-template-columns: 1fr !important; }
+               }
+              .modal-adjust-z { z-index: 1000; }
               .loader { animation: pulse 1.5s infinite; }
               @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
             `}} />
