@@ -227,40 +227,55 @@ const Sales = () => {
 
     const downloadPNG = async (sale = selectedSale) => {
         if (!sale) return;
-        if (!selectedSale || selectedSale._id !== sale._id) setSelectedSale(sale);
-        if (!showViewModal) setShowViewModal(true);
+        
+        // Ensure the correct sale is selected and visible
+        if (!selectedSale || selectedSale._id !== sale._id) {
+            setSelectedSale(sale);
+        }
+        setShowViewModal(true);
 
         setTimeout(async () => {
             const element = document.getElementById('receipt-print-area');
             if (!element) {
-                toast.error("Receipt element not found.");
+                toast.error("Preparing receipt... please try again.");
                 return;
             }
             try {
-                toast.loading("Generating Image...", { id: 'png-loading' });
+                const loadingToast = toast.loading("Generating high-quality image...");
+                
                 const canvas = await html2canvas(element, { 
                     scale: 3, 
                     useCORS: true,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    windowWidth: 420
                 });
-                const imgData = canvas.toDataURL('image/png');
                 
-                // For mobile reliability, we'll try the link click but also provide a fallback
-                const link = document.createElement('a');
-                link.href = imgData;
-                link.download = `receipt-${sale._id.slice(-6)}.png`;
-                
-                // Append to body to ensure it's "in the document" for mobile browsers
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        toast.error("Failed to generate image.", { id: loadingToast });
+                        return;
+                    }
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `receipt-${sale._id.slice(-6).toUpperCase()}.png`;
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }, 200);
+                    
+                    toast.success("Image saved!", { id: loadingToast });
+                }, 'image/png');
 
-                toast.success("Image Downloaded!", { id: 'png-loading' });
             } catch (error) {
                 console.error("Could not generate PNG", error);
-                toast.error("Failed to generate image.", { id: 'png-loading' });
+                toast.error("Failed to generate image.");
             }
-        }, 500);
+        }, 800);
     };
 
 
