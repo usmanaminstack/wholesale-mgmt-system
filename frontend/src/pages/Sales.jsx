@@ -152,30 +152,64 @@ const Sales = () => {
 
     const handleShare = async (saleToShare = lastCreatedInvoice) => {
         if (!saleToShare) return;
-        const shareText = `Invoice #${saleToShare._id.slice(-6).toUpperCase()} from Guddu Traders for PKR ${saleToShare.totalAmount.toLocaleString()}`;
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Invoice from Guddu Traders',
-                    text: shareText,
-                    url: window.location.href,
-                });
-            } catch (err) {
-                console.log('Error sharing:', err);
+
+        // Force render receipt if not visible
+        if (!selectedSale || selectedSale._id !== saleToShare._id) setSelectedSale(saleToShare);
+        if (!showViewModal) setShowViewModal(true);
+
+        setTimeout(async () => {
+            const element = document.getElementById('receipt-print-area');
+            if (!element) {
+                toast.error("Could not prepare receipt for sharing.");
+                return;
             }
-        } else {
-            // Fallback: Copy to clipboard
+
             try {
-                await navigator.clipboard.writeText(`${shareText}\n${window.location.href}`);
-                toast.success('Invoice details copied to clipboard!');
+                toast.loading("Preparing PDF...", { id: 'share-loading' });
+                const canvas = await html2canvas(element, { scale: 3, useCORS: true });
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = 80;
+                const imgProps = canvas.width / canvas.height;
+                const pdfHeight = pdfWidth / imgProps;
+
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfWidth, pdfHeight + 10] });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                
+                const pdfBlob = pdf.output('blob');
+                const file = new File([pdfBlob], `receipt-${saleToShare._id.slice(-6)}.pdf`, { type: 'application/pdf' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: `Invoice #${saleToShare._id.slice(-6).toUpperCase()}`,
+                        text: `Invoice from Guddu Traders for PKR ${saleToShare.totalAmount.toLocaleString()}`
+                    });
+                    toast.success("Shared successfully!", { id: 'share-loading' });
+                } else {
+                    // Fallback to link share if file share not supported
+                    const shareText = `Invoice #${saleToShare._id.slice(-6).toUpperCase()} from Guddu Traders for PKR ${saleToShare.totalAmount.toLocaleString()}`;
+                    await navigator.share({
+                        title: 'Invoice from Guddu Traders',
+                        text: shareText,
+                        url: window.location.href,
+                    });
+                    toast.success("Shared link!", { id: 'share-loading' });
+                }
             } catch (err) {
-                toast.error('Failed to copy to clipboard');
+                console.error('Error sharing:', err);
+                toast.error("Sharing failed.", { id: 'share-loading' });
             }
-        }
+        }, 500);
     };
 
-    const printInvoice = () => {
-        window.print();
+    const printInvoice = (sale = selectedSale) => {
+        if (!sale) return;
+        if (!selectedSale) setSelectedSale(sale);
+        if (!showViewModal) setShowViewModal(true);
+        
+        setTimeout(() => {
+            window.print();
+        }, 300);
     };
 
     const handleDeleteSale = async (id) => {
@@ -189,28 +223,50 @@ const Sales = () => {
         }
     };
 
-    const downloadPDF = async () => {
-        const element = document.getElementById('receipt-print-area');
-        if (!element) return;
-        try {
-            const canvas = await html2canvas(element, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            // Calculate height in mm based on an 80mm width
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [80, 200]
-            });
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const downloadPDF = async (sale = selectedSale) => {
+        // Ensure the sale is selected and the element exists
+        if (!sale) return;
+        
+        // If the element doesn't exist yet (modal not open), we can't capture it easily.
+        // So we'll force the view modal to open if it's not.
+        if (!selectedSale) setSelectedSale(sale);
+        if (!showViewModal) setShowViewModal(true);
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`receipt-${selectedSale._id.slice(-8)}.pdf`);
-        } catch (error) {
-            console.error("Could not generate PDF", error);
-            alert("Failed to generate PDF. Please try again.");
-        }
+        // Small delay to ensure the modal is rendered in the DOM
+        setTimeout(async () => {
+            const element = document.getElementById('receipt-print-area');
+            if (!element) {
+                toast.error("Receipt element not found. Please try again.");
+                return;
+            }
+            try {
+                const canvas = await html2canvas(element, { 
+                    scale: 3, 
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Calculate height dynamically to prevent clipping
+                const pdfWidth = 80;
+                const imgProps = canvas.width / canvas.height;
+                const pdfHeight = pdfWidth / imgProps;
+
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: [pdfWidth, pdfHeight + 10] // Add a bit of padding
+                });
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`receipt-${sale._id.slice(-8)}.pdf`);
+                toast.success("PDF Downloaded!");
+            } catch (error) {
+                console.error("Could not generate PDF", error);
+                toast.error("Failed to generate PDF.");
+            }
+        }, 300);
     };
 
 
@@ -607,10 +663,10 @@ const Sales = () => {
                     <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>Invoice #{lastCreatedInvoice?._id.slice(-6).toUpperCase()} has been saved successfully.</p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); printInvoice(); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                        <button onClick={() => { setShowSuccessModal(false); printInvoice(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
                             <Printer size={22} /> Print
                         </button>
-                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); downloadPDF(); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                        <button onClick={() => { setShowSuccessModal(false); downloadPDF(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
                             <Download size={22} /> PDF
                         </button>
                         <button onClick={() => handleShare(lastCreatedInvoice)} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
@@ -626,11 +682,12 @@ const Sales = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-              @media print {
+               @media print {
                 body * { visibility: hidden; }
-                .invoice-print-area, .invoice-print-area * { visibility: visible; }
-                .invoice-print-area { position: absolute; left: 0; top: 0; width: 100% !important; }
-                .no-print { display: none !important; }
+                .pos-receipt, .pos-receipt * { visibility: visible; }
+                .pos-receipt { position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 20px !important; box-shadow: none !important; border: none !important; }
+                .no-print, .modal-overlay { display: none !important; }
+                .modal-content { background: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
               }
               @media (max-width: 768px) {
                 .header-actions { width: 100%; }
