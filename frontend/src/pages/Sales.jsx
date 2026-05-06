@@ -462,37 +462,35 @@ const Sales = () => {
 
                 <div id="receipt-print-area" className="pos-receipt" data-testid="pos-receipt">
                     <div className="pos-receipt-header">
-                        <div style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: '800', letterSpacing: '2px', marginBottom: '8px' }}>OFFICIAL INVOICE</div>
                         <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
-                        <div className="pos-receipt-subtitle">Premium Cold Drink Wholesale</div>
-                        <div style={{ fontSize: '11px', marginTop: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                            Main Bazar Road, Guddu Trader Shop <br />
-                            Phone: 0300-1234567 | 0311-7654321
+                        <div className="pos-receipt-subtitle">Premium Wholesale & Retail Shop</div>
+                        <div className="pos-receipt-contact">
+                            Arooba corner shop no 3, near mazedar haleem <br />
+                            Phone: 0331-1485725 | 0330-1398956
                         </div>
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
-                        <div className="pos-receipt-info">
-                            <span>INVOICE NO:</span>
-                            <span style={{ fontWeight: '800' }}>#{selectedSale?._id.slice(-6).toUpperCase()}</span>
+                    <div className="pos-receipt-info-grid">
+                        <div className="pos-receipt-info-item">
+                            <span className="pos-receipt-info-label">Invoice No</span>
+                            <span className="pos-receipt-info-value">#{selectedSale?._id.slice(-6).toUpperCase()}</span>
                         </div>
-                        <div className="pos-receipt-info">
-                            <span>DATE:</span>
-                            <span>{selectedSale && new Date(selectedSale.saleDate).toLocaleDateString()}</span>
+                        <div className="pos-receipt-info-item">
+                            <span className="pos-receipt-info-label">Date</span>
+                            <span className="pos-receipt-info-value">{selectedSale && new Date(selectedSale.saleDate).toLocaleDateString()}</span>
                         </div>
-                        <div className="pos-receipt-info">
-                            <span>CUSTOMER:</span>
-                            <span style={{ fontWeight: '800', color: 'var(--primary)' }}>{selectedSale?.customer?.name || selectedSale?.customerName || 'WALK-IN GUEST'}</span>
+                        <div className="pos-receipt-info-item" style={{ gridColumn: 'span 2' }}>
+                            <span className="pos-receipt-info-label">Customer</span>
+                            <span className="pos-receipt-info-value">{selectedSale?.customer?.name || selectedSale?.customerName || 'WALK-IN GUEST'}</span>
                         </div>
                     </div>
 
                     <table className="pos-receipt-table">
                         <thead data-testid="receipt-header">
                             <tr>
-                                <th style={{ textAlign: 'left', width: '40%' }}>ITEM</th>
-                                <th style={{ textAlign: 'center', width: '15%' }}>QTY</th>
-                                <th style={{ textAlign: 'right', width: '20%' }}>PRICE</th>
-                                <th style={{ textAlign: 'right', width: '25%' }}>TOTAL</th>
+                                <th style={{ textAlign: 'left', width: '50%' }}>ITEM DESCRIPTION</th>
+                                <th style={{ textAlign: 'center', width: '20%' }}>QTY</th>
+                                <th style={{ textAlign: 'right', width: '30%' }}>TOTAL</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -500,14 +498,14 @@ const Sales = () => {
                                 <tr key={idx}>
                                     <td style={{ textAlign: 'left' }}>
                                         <span className="pos-item-name">{item.product?.name || 'Item'}</span>
+                                        <div className="pos-item-qty-price">
+                                            {item.priceAtSale.toLocaleString()} x {item.unit}
+                                        </div>
                                     </td>
-                                    <td style={{ textAlign: 'center', verticalAlign: 'top', fontWeight: '700', fontSize: '12px' }}>
-                                        {item.quantity}<span style={{ fontSize: '9px', display: 'block', color: 'var(--text-muted)' }}>{item.unit}</span>
+                                    <td style={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: '700' }}>
+                                        {item.quantity}
                                     </td>
-                                    <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '600', fontSize: '12px' }}>
-                                        {item.priceAtSale.toLocaleString()}
-                                    </td>
-                                    <td style={{ textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontSize: '13px' }}>
+                                    <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '800' }}>
                                         {item.totalPrice.toLocaleString()}
                                     </td>
                                 </tr>
@@ -521,7 +519,7 @@ const Sales = () => {
                             <span>{selectedSale?.totalAmount.toLocaleString()}</span>
                         </div>
                         {(selectedSale?.discount || 0) > 0 && (
-                            <div className="pos-total-row" style={{ color: 'var(--danger)' }}>
+                            <div className="pos-total-row">
                                 <span>DISCOUNT</span>
                                 <span>-{selectedSale?.discount.toLocaleString()}</span>
                             </div>
@@ -530,23 +528,24 @@ const Sales = () => {
                             <span>NET PAYABLE</span>
                             <span>PKR {(selectedSale?.totalAmount - (selectedSale?.discount || 0)).toLocaleString()}</span>
                         </div>
-                        <div className="pos-total-row" style={{ marginTop: '10px', fontSize: '12px' }}>
+                        <div className="pos-total-row" style={{ marginTop: '10px' }}>
                             <span>PAID AMOUNT</span>
                             <span>{selectedSale?.receivedAmount.toLocaleString()}</span>
                         </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <div className="pos-status-badge" style={{
-                                backgroundColor: selectedSale?.balanceAmount > 0 ? '#fee2e2' : '#dcfce7',
-                                color: selectedSale?.balanceAmount > 0 ? '#991b1b' : '#166534'
-                            }}>
-                                {selectedSale?.balanceAmount > 0 ? `DUE: PKR ${selectedSale?.balanceAmount.toLocaleString()}` : 'FULLY PAID'}
-                            </div>
+                        
+                        <div className="pos-status-badge" style={{
+                            borderColor: selectedSale?.balanceAmount > 0 ? '#000' : '#000',
+                            backgroundColor: selectedSale?.balanceAmount > 0 ? '#fff' : '#000',
+                            color: selectedSale?.balanceAmount > 0 ? '#000' : '#fff'
+                        }}>
+                            {selectedSale?.balanceAmount > 0 ? `BALANCE DUE: PKR ${selectedSale?.balanceAmount.toLocaleString()}` : 'FULLY PAID'}
                         </div>
                     </div>
 
                     <div className="pos-footer">
-                        THANK YOU FOR YOUR BUSINESS! <br />
-                        <div style={{ marginTop: '8px', opacity: 0.5 }}>Software by Guddu Traders Management</div>
+                        <div style={{ fontWeight: '800', marginBottom: '4px' }}>THANK YOU FOR YOUR BUSINESS!</div>
+                        <div>Please keep this receipt for your records.</div>
+                        <div style={{ marginTop: '12px', fontSize: '9px', opacity: 0.6 }}>Software by Guddu Traders Management</div>
                     </div>
                 </div>
             </Modal>
