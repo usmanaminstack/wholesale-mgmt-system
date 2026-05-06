@@ -382,6 +382,30 @@ label {
     button, a { min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center; }
     .action-btn { gap: 12px !important; } 
     .action-btn button { min-width: 44px; min-height: 44px; }
+
+    /* Fix: Prevent POS Receipt from being affected by mobile table card transformations */
+    .pos-receipt table, 
+    .pos-receipt thead, 
+    .pos-receipt tbody, 
+    .pos-receipt th, 
+    .pos-receipt td, 
+    .pos-receipt tr {
+        display: table !important;
+        width: 100% !important;
+    }
+    .pos-receipt table { width: 100% !important; border-collapse: collapse !important; }
+    .pos-receipt thead { display: table-header-group !important; }
+    .pos-receipt tbody { display: table-row-group !important; }
+    .pos-receipt tr { display: table-row !important; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+    .pos-receipt td { display: table-cell !important; text-align: inherit !important; padding: 12px 0 !important; border-bottom: 1px solid #f3f4f6 !important; justify-content: flex-start !important; }
+    .pos-receipt td::before { content: none !important; }
+    .pos-receipt th { display: table-cell !important; text-align: left !important; padding: 10px 0 !important; border-bottom: 2px solid #000 !important; }
+    
+    /* Ensure receipt modal looks like a centered card on mobile, not a drawer */
+    .pos-receipt {
+        padding: 20px 15px !important;
+        border-radius: 4px !important;
+    }
 }
 
 /* Modal Keyboard Fix */
