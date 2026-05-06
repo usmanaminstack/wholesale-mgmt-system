@@ -15,6 +15,7 @@ const saleSchema = mongoose.Schema({
     receivedAmount: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     balanceAmount: { type: Number, default: 0 },
+    previousBalance: { type: Number, default: 0 },
     paymentType: { type: String, enum: ['Cash', 'Credit'], required: true },
     saleDate: { type: Date, default: Date.now },
     isRetail: { type: Boolean, default: false }

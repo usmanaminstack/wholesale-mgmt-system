@@ -31,6 +31,7 @@ const Sales = () => {
         receivedAmount: 0,
         discount: 0,
         isRetail: true,
+        previousBalance: 0,
         items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
     });
 
@@ -112,7 +113,8 @@ const Sales = () => {
                 unit: item.unit,
                 priceAtSale: item.priceAtSale,
                 totalPrice: item.totalPrice
-            }))
+            })),
+            previousBalance: sale.previousBalance || 0
         });
         setShowModal(true);
     };
@@ -141,7 +143,7 @@ const Sales = () => {
             setShowModal(false);
             setIsEditing(false);
             setSelectedSale(null);
-            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
+            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
             fetchSales();
         } catch (err) {
             console.error(err);
@@ -322,7 +324,14 @@ const Sales = () => {
                                 <select
                                     value={formData.customer} onChange={e => {
                                         const c = customers.find(cust => cust._id === e.target.value);
-                                        setFormData({ ...formData, customer: e.target.value, customerName: c ? c.name : '' });
+                                        setFormData({ 
+                                            ...formData, 
+                                            customer: e.target.value, 
+                                            customerName: c ? c.name : '',
+                                            previousBalance: c ? (c.outstandingReceivable || 0) : 0,
+                                            phone: c ? c.phone : formData.phone,
+                                            address: c ? c.address : formData.address
+                                        });
                                     }}
                                 >
                                     <option value="">Walking / New Customer</option>
@@ -413,6 +422,13 @@ const Sales = () => {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Previous Balance:</span>
+                                    <input
+                                        type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
+                                        value={formData.previousBalance} onChange={e => setFormData({ ...formData, previousBalance: parseFloat(e.target.value) || 0 })}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Gross Total:</span>
                                     <span style={{ fontWeight: '700' }}>PKR {totalAmount?.toLocaleString()}</span>
                                 </div>
@@ -435,8 +451,12 @@ const Sales = () => {
                                     />
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '700', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>Balance Due:</span>
+                                    <span style={{ fontWeight: '700', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>Invoice Due:</span>
                                     <span style={{ fontWeight: '900', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)', fontSize: '1.1rem' }}>PKR {(totalAmount - formData.discount - formData.receivedAmount)?.toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderTop: '1px solid var(--border)', marginTop: '8px' }}>
+                                    <span style={{ fontWeight: '800', color: 'var(--text)' }}>Total Outstanding:</span>
+                                    <span style={{ fontWeight: '900', color: 'var(--text)', fontSize: '1.2rem' }}>PKR {(formData.previousBalance + (totalAmount - formData.discount - formData.receivedAmount))?.toLocaleString()}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
                                     <button type="submit" className="primary" style={{ flex: 2, padding: '16px', fontSize: '1.1rem', borderRadius: '16px', border: 'none', cursor: 'pointer' }}>
@@ -524,21 +544,34 @@ const Sales = () => {
                                 <span>-{selectedSale?.discount.toLocaleString()}</span>
                             </div>
                         )}
-                        <div className="pos-net-total">
-                            <span>NET PAYABLE</span>
-                            <span>PKR {(selectedSale?.totalAmount - (selectedSale?.discount || 0)).toLocaleString()}</span>
+                        <div className="pos-total-row" style={{ fontWeight: '800', color: '#000' }}>
+                            <span>NET INVOICE</span>
+                            <span>{(selectedSale?.totalAmount - (selectedSale?.discount || 0)).toLocaleString()}</span>
                         </div>
+                        
+                        <div className="pos-total-row" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #ccc' }}>
+                            <span>PREVIOUS BALANCE</span>
+                            <span>{selectedSale?.previousBalance?.toLocaleString() || 0}</span>
+                        </div>
+                        
+                        <div className="pos-net-total">
+                            <span>GRAND TOTAL</span>
+                            <span>PKR {((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0))).toLocaleString()}</span>
+                        </div>
+
                         <div className="pos-total-row" style={{ marginTop: '10px' }}>
-                            <span>PAID AMOUNT</span>
+                            <span>AMOUNT PAID</span>
                             <span>{selectedSale?.receivedAmount.toLocaleString()}</span>
                         </div>
                         
                         <div className="pos-status-badge" style={{
-                            borderColor: selectedSale?.balanceAmount > 0 ? '#000' : '#000',
-                            backgroundColor: selectedSale?.balanceAmount > 0 ? '#fff' : '#000',
-                            color: selectedSale?.balanceAmount > 0 ? '#000' : '#fff'
+                            borderColor: '#000',
+                            backgroundColor: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#fff' : '#000',
+                            color: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#000' : '#fff'
                         }}>
-                            {selectedSale?.balanceAmount > 0 ? `BALANCE DUE: PKR ${selectedSale?.balanceAmount.toLocaleString()}` : 'FULLY PAID'}
+                            {((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 
+                                ? `REMAINING: PKR ${((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))).toLocaleString()}` 
+                                : 'FULLY PAID'}
                         </div>
                     </div>
 

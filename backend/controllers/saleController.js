@@ -5,7 +5,7 @@ const { addLedgerEntry } = require('../utils/ledgerHelper');
 
 exports.createSale = async (req, res) => {
     try {
-        const { customer, customerName, items, paymentType, receivedAmount, saleDate, isRetail, discount = 0 } = req.body;
+        const { customer, customerName, items, paymentType, receivedAmount, saleDate, isRetail, discount = 0, previousBalance = 0 } = req.body;
 
         let totalAmount = 0;
         const processedItems = [];
@@ -51,6 +51,7 @@ exports.createSale = async (req, res) => {
             receivedAmount,
             discount,
             balanceAmount,
+            previousBalance,
             paymentType,
             saleDate,
             isRetail
@@ -138,8 +139,7 @@ exports.updateSale = async (req, res) => {
     try {
         const originalSale = await Sale.findById(req.params.id);
         if (!originalSale) return res.status(404).json({ message: 'Sale not found' });
-
-        const { customer, customerName, items, paymentType, receivedAmount, saleDate, isRetail } = req.body;
+        const { customer, customerName, items, paymentType, receivedAmount, saleDate, isRetail, previousBalance } = req.body;
 
         // 1. Revert Original Stock Changes
         for (const item of originalSale.items) {
@@ -246,6 +246,7 @@ exports.updateSale = async (req, res) => {
             totalAmount,
             receivedAmount,
             balanceAmount,
+            previousBalance: previousBalance !== undefined ? previousBalance : originalSale.previousBalance,
             paymentType,
             saleDate: saleDate || originalSale.saleDate,
             isRetail
