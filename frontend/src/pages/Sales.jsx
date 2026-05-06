@@ -150,9 +150,10 @@ const Sales = () => {
         }
     };
 
-    const handleShare = async () => {
-        const shareText = `Invoice #${lastCreatedInvoice._id.slice(-6).toUpperCase()} from Guddu Traders for PKR ${lastCreatedInvoice.totalAmount.toLocaleString()}`;
-        if (navigator.share && lastCreatedInvoice) {
+    const handleShare = async (saleToShare = lastCreatedInvoice) => {
+        if (!saleToShare) return;
+        const shareText = `Invoice #${saleToShare._id.slice(-6).toUpperCase()} from Guddu Traders for PKR ${saleToShare.totalAmount.toLocaleString()}`;
+        if (navigator.share) {
             try {
                 await navigator.share({
                     title: 'Invoice from Guddu Traders',
@@ -470,13 +471,27 @@ const Sales = () => {
                 </form>
             </Modal>
 
-            <Modal isOpen={showViewModal && !!selectedSale} onClose={() => setShowViewModal(false)} maxWidth="450px">
-                <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, paddingBottom: '12px' }}>
-                    <h3 style={{ margin: 0 }}>Invoice Receipt</h3>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={printInvoice} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px', borderRadius: '10px' }}><Printer size={20} /></button>
-                        <button onClick={downloadPDF} style={{ background: 'var(--primary)', color: 'white', padding: '10px', borderRadius: '10px' }}><Download size={20} /></button>
-                        <button onClick={() => setShowViewModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', padding: '10px', borderRadius: '10px' }}><X size={20} /></button>
+            <Modal isOpen={showViewModal && !!selectedSale} onClose={() => setShowViewModal(false)} maxWidth="500px">
+                <div className="no-print" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    marginBottom: '24px', 
+                    position: 'sticky', 
+                    top: 0, 
+                    backgroundColor: 'white', 
+                    zIndex: 10, 
+                    paddingBottom: '16px',
+                    borderBottom: '1px solid #f1f5f9',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Invoice Receipt</h3>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button onClick={printInvoice} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Print"><Printer size={20} /></button>
+                        <button onClick={downloadPDF} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Download PDF"><Download size={20} /></button>
+                        <button onClick={() => handleShare(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Share"><Share2 size={20} /></button>
+                        <button onClick={() => setShowViewModal(false)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px 14px', borderRadius: '12px' }} title="Close"><X size={20} /></button>
                     </div>
                 </div>
 
@@ -591,19 +606,19 @@ const Sales = () => {
                     <h2 style={{ margin: '0 0 8px 0', fontWeight: '900' }}>Invoice Created!</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>Invoice #{lastCreatedInvoice?._id.slice(-6).toUpperCase()} has been saved successfully.</p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); printInvoice(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <Printer size={18} /> Print
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); printInvoice(); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                            <Printer size={22} /> Print
                         </button>
-                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); downloadPDF(); }} style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <Download size={18} /> PDF
+                        <button onClick={() => { setSelectedSale(lastCreatedInvoice); downloadPDF(); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                            <Download size={22} /> PDF
+                        </button>
+                        <button onClick={() => handleShare(lastCreatedInvoice)} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                            <Share2 size={22} /> Share
                         </button>
                     </div>
-                    <button onClick={handleShare} style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#f1f5f9', color: 'var(--text)', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
-                        <Share2 size={18} /> Share Invoice
-                    </button>
 
-                    <button onClick={() => setShowSuccessModal(false)} style={{ width: '100%', padding: '16px', borderRadius: '16px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', fontWeight: '900', fontSize: '1rem', cursor: 'pointer' }}>
+                    <button onClick={() => setShowSuccessModal(false)} style={{ width: '100%', padding: '18px', borderRadius: '18px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 10px 20px rgba(14, 165, 233, 0.2)' }}>
                         Done & Close
                     </button>
                 </div>
