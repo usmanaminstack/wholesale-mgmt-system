@@ -204,12 +204,14 @@ const Sales = () => {
 
     const printInvoice = (sale = selectedSale) => {
         if (!sale) return;
-        if (!selectedSale) setSelectedSale(sale);
-        if (!showViewModal) setShowViewModal(true);
+        if (!selectedSale || selectedSale._id !== sale._id) {
+            setSelectedSale(sale);
+        }
+        setShowViewModal(true);
         
         setTimeout(() => {
             window.print();
-        }, 300);
+        }, 800); // Increased delay for mobile
     };
 
     const handleDeleteSale = async (id) => {
@@ -223,50 +225,42 @@ const Sales = () => {
         }
     };
 
-    const downloadPDF = async (sale = selectedSale) => {
-        // Ensure the sale is selected and the element exists
+    const downloadPNG = async (sale = selectedSale) => {
         if (!sale) return;
-        
-        // If the element doesn't exist yet (modal not open), we can't capture it easily.
-        // So we'll force the view modal to open if it's not.
-        if (!selectedSale) setSelectedSale(sale);
+        if (!selectedSale || selectedSale._id !== sale._id) setSelectedSale(sale);
         if (!showViewModal) setShowViewModal(true);
 
-        // Small delay to ensure the modal is rendered in the DOM
         setTimeout(async () => {
             const element = document.getElementById('receipt-print-area');
             if (!element) {
-                toast.error("Receipt element not found. Please try again.");
+                toast.error("Receipt element not found.");
                 return;
             }
             try {
+                toast.loading("Generating Image...", { id: 'png-loading' });
                 const canvas = await html2canvas(element, { 
                     scale: 3, 
                     useCORS: true,
-                    logging: false,
                     backgroundColor: '#ffffff'
                 });
                 const imgData = canvas.toDataURL('image/png');
                 
-                // Calculate height dynamically to prevent clipping
-                const pdfWidth = 80;
-                const imgProps = canvas.width / canvas.height;
-                const pdfHeight = pdfWidth / imgProps;
+                // For mobile reliability, we'll try the link click but also provide a fallback
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = `receipt-${sale._id.slice(-6)}.png`;
+                
+                // Append to body to ensure it's "in the document" for mobile browsers
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
 
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: [pdfWidth, pdfHeight + 10] // Add a bit of padding
-                });
-
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`receipt-${sale._id.slice(-8)}.pdf`);
-                toast.success("PDF Downloaded!");
+                toast.success("Image Downloaded!", { id: 'png-loading' });
             } catch (error) {
-                console.error("Could not generate PDF", error);
-                toast.error("Failed to generate PDF.");
+                console.error("Could not generate PNG", error);
+                toast.error("Failed to generate image.", { id: 'png-loading' });
             }
-        }, 300);
+        }, 500);
     };
 
 
@@ -544,8 +538,8 @@ const Sales = () => {
                 }}>
                     <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Invoice Receipt</h3>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button onClick={printInvoice} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Print"><Printer size={20} /></button>
-                        <button onClick={downloadPDF} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Download PDF"><Download size={20} /></button>
+                        <button onClick={() => printInvoice(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Print / PDF"><Printer size={20} /></button>
+                        <button onClick={() => downloadPNG(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Download PNG"><Download size={20} /></button>
                         <button onClick={() => handleShare(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Share"><Share2 size={20} /></button>
                         <button onClick={() => setShowViewModal(false)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px 14px', borderRadius: '12px' }} title="Close"><X size={20} /></button>
                     </div>
@@ -666,8 +660,8 @@ const Sales = () => {
                         <button onClick={() => { setShowSuccessModal(false); printInvoice(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
                             <Printer size={22} /> Print
                         </button>
-                        <button onClick={() => { setShowSuccessModal(false); downloadPDF(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                            <Download size={22} /> PDF
+                        <button onClick={() => { setShowSuccessModal(false); downloadPNG(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                            <Download size={22} /> Image
                         </button>
                         <button onClick={() => handleShare(lastCreatedInvoice)} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
                             <Share2 size={22} /> Share
