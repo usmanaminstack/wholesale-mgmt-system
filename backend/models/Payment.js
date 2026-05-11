@@ -5,7 +5,7 @@ const paymentSchema = mongoose.Schema({
     entityId: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: 'entityType' },
     amount: { type: Number, required: true },
     paymentDate: { type: Date, default: Date.now },
-    paymentMethod: { type: String, enum: ['Cash', 'Bank', 'Other'], default: 'Cash' },
+    paymentMethod: { type: String, enum: ['Cash', 'Bank', 'Bank Transfer', 'Cheque', 'Other'], default: 'Cash' },
     note: { type: String }
 }, { timestamps: true });
 

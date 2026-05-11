@@ -63,7 +63,8 @@ exports.createSale = async (req, res) => {
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesToReduce = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
                 product.stockInPieces -= piecesToReduce;
                 await product.save();
             }
@@ -145,7 +146,8 @@ exports.updateSale = async (req, res) => {
         for (const item of originalSale.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesToAdd = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToAdd = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
                 product.stockInPieces += piecesToAdd;
                 await product.save();
             }
@@ -201,7 +203,8 @@ exports.updateSale = async (req, res) => {
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesToReduce = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
                 product.stockInPieces -= piecesToReduce;
                 await product.save();
             }
@@ -270,7 +273,8 @@ exports.deleteSale = async (req, res) => {
         for (const item of sale.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesToAdd = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToAdd = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
                 product.stockInPieces += piecesToAdd;
                 await product.save();
             }

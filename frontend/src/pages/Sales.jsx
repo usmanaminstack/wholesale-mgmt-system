@@ -7,6 +7,7 @@ import DateFilter from '../components/DateFilter';
 import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download, Share2, CheckCircle2, Search } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
 import Modal from '../components/Modal';
+import SearchableSelect from '../components/SearchableSelect';
 
 
 const Sales = () => {
@@ -387,8 +388,10 @@ const Sales = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
                             <div>
                                 <label>Customer Type</label>
-                                <select
-                                    value={formData.customer} onChange={e => {
+                                <SearchableSelect
+                                    options={customers}
+                                    value={formData.customer}
+                                    onChange={e => {
                                         const c = customers.find(cust => cust._id === e.target.value);
                                         setFormData({ 
                                             ...formData, 
@@ -399,10 +402,8 @@ const Sales = () => {
                                             address: c ? c.address : formData.address
                                         });
                                     }}
-                                >
-                                    <option value="">Walking / New Customer</option>
-                                    {customers.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                                </select>
+                                    placeholder="Walking / New Customer"
+                                />
                             </div>
                             {!formData.customer && (
                                 <>
@@ -442,17 +443,13 @@ const Sales = () => {
                                 <div key={index} className="invoice-row" style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.5fr 1.5fr 48px', gap: '16px', alignItems: 'end', backgroundColor: 'white', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
                                     <div>
                                         <label className="desktop-only">Product Selection</label>
-                                        <select required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)} >
-                                            <option value="">-- Choose Product --</option>
-                                            {products
-                                                .filter(p => showOutOfStock || p.stockInPieces > 0 || item.product === p._id)
-                                                .map(p => (
-                                                    <option key={p._id} value={p._id}>
-                                                        {p.name} (Stock: {(p.stockInPieces / (p.piecesPerCarton || 1)).toFixed(1)} Ctn)
-                                                    </option>
-                                                ))
-                                            }
-                                        </select>
+                                        <SearchableSelect
+                                            options={products.filter(p => showOutOfStock || p.stockInPieces > 0 || item.product === p._id)}
+                                            value={item.product}
+                                            onChange={e => handleItemChange(index, 'product', e.target.value)}
+                                            placeholder="-- Choose Product --"
+                                            required
+                                        />
                                     </div>
                                     <div>
                                         <label className="desktop-only">Unit</label>

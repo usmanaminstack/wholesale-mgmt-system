@@ -25,7 +25,8 @@ exports.createReturn = async (req, res) => {
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesToAdd = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToAdd = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
                 product.stockInPieces += piecesToAdd;
                 await product.save();
             }
@@ -76,7 +77,8 @@ exports.deleteReturn = async (req, res) => {
         for (const item of saleReturn.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesToRemove = item.unit === 'Carton' ? (item.quantity * product.piecesPerCarton) : item.quantity;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToRemove = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
                 product.stockInPieces -= piecesToRemove;
                 await product.save();
             }

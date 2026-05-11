@@ -4,6 +4,7 @@ import DateFilter from '../components/DateFilter';
 import { Plus, CreditCard, ArrowRight, Wallet, UserCheck, Search, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, X, Info } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
 import Modal from '../components/Modal';
+import SearchableSelect from '../components/SearchableSelect';
 
 const Payments = () => {
     const [payments, setPayments] = useState([]);
@@ -221,18 +222,17 @@ const Payments = () => {
 
                     <div>
                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>{formData.entityType === 'Customer' ? 'Customer Name' : 'Supplier Name'}</label>
-                        <select
+                        <SearchableSelect
+                            options={entities.map(e => ({
+                                ...e,
+                                displayName: `${e.name} (Bal: PKR ${(formData.entityType === 'Customer' ? e.outstandingReceivable : e.outstandingPayable)?.toLocaleString()})`
+                            }))}
+                            labelField="displayName"
+                            value={formData.entityId}
+                            onChange={e => setFormData({ ...formData, entityId: e.target.value })}
+                            placeholder="Select Account..."
                             required
-                            value={formData.entityId} onChange={e => setFormData({ ...formData, entityId: e.target.value })}
-                            style={{ fontWeight: '700' }}
-                        >
-                            <option value="">Select Account...</option>
-                            {entities.map(e => (
-                                <option key={e._id} value={e._id}>
-                                    {e.name} (Bal: PKR {(formData.entityType === 'Customer' ? e.outstandingReceivable : e.outstandingPayable)?.toLocaleString()})
-                                </option>
-                            ))}
-                        </select>
+                        />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

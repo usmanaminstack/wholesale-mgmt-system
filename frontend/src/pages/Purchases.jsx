@@ -4,6 +4,7 @@ import DateFilter from '../components/DateFilter';
 import { Plus, Trash, Save, ShoppingCart, Truck, Edit, Trash2, Calendar, X, ArrowRight, Package, DollarSign } from 'lucide-react';
 import { getLocalDateString } from '../utils/dateUtils';
 import Modal from '../components/Modal';
+import SearchableSelect from '../components/SearchableSelect';
 
 const Purchases = () => {
     const [purchases, setPurchases] = useState([]);
@@ -17,7 +18,7 @@ const Purchases = () => {
         supplier: '',
         paymentType: 'Cash',
         paidAmount: 0,
-        items: [{ product: '', quantityInCartons: 1, costPerCarton: 0, totalCost: 0 }],
+        items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }],
         purchaseDate: getLocalDateString()
     });
 
@@ -60,9 +61,10 @@ const Purchases = () => {
             purchaseDate: new Date(p.purchaseDate).toISOString().split('T')[0],
             items: p.items.map(item => ({
                 product: item.product?._id || item.product,
-                quantityInCartons: item.quantityInCartons,
-                costPerCarton: item.costPerCarton,
-                totalCost: item.totalCost
+                quantity: item.quantity || item.quantityInCartons || 0,
+                unit: item.unit || 'Carton',
+                costAtPurchase: item.costAtPurchase || item.costPerCarton || 0,
+                totalCost: item.totalCost || 0
             }))
         });
         setShowModal(true);
@@ -80,7 +82,7 @@ const Purchases = () => {
     const addItem = () => {
         setFormData({
             ...formData,
-            items: [...formData.items, { product: '', quantityInCartons: 1, costPerCarton: 0, totalCost: 0 }]
+            items: [...formData.items, { product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }]
         });
     };
 
@@ -93,12 +95,15 @@ const Purchases = () => {
         const newItems = [...formData.items];
         newItems[index][field] = value;
 
-        if (field === 'product') {
-            const p = products.find(prod => prod._id === value);
-            if (p) newItems[index].costPerCarton = p.costPricePerCarton || p.pricePerCarton;
+        const p = products.find(prod => prod._id === newItems[index].product);
+        
+        if (field === 'product' || field === 'unit') {
+            if (p) {
+                newItems[index].costAtPurchase = newItems[index].unit === 'Carton' ? (p.costPricePerCarton || p.pricePerCarton) : (p.costPricePerPiece || p.pricePerPiece);
+            }
         }
 
-        newItems[index].totalCost = (newItems[index].quantityInCartons || 0) * (newItems[index].costPerCarton || 0);
+        newItems[index].totalCost = (newItems[index].quantity || 0) * (newItems[index].costAtPurchase || 0);
         setFormData({ ...formData, items: newItems });
     };
 
@@ -115,7 +120,7 @@ const Purchases = () => {
             setShowModal(false);
             setIsEditing(false);
             setEditingPurchase(null);
-            setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantityInCartons: 1, costPerCarton: 0, totalCost: 0 }], purchaseDate: getLocalDateString() });
+            setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() });
             fetchPurchases();
         } catch (err) {
             alert(err.response?.data?.message || err.message);
@@ -219,14 +224,13 @@ const Purchases = () => {
                         </div>
                         <div>
                             <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Supplier</label>
-                            <select
+                            <SearchableSelect
+                                options={suppliers}
+                                value={formData.supplier}
+                                onChange={e => setFormData({ ...formData, supplier: e.target.value })}
+                                placeholder="Select Supplier"
                                 required
-                                value={formData.supplier} onChange={e => setFormData({ ...formData, supplier: e.target.value })}
-                                style={{ padding: '10px' }}
-                            >
-                                <option value="">Select Supplier</option>
-                                {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                            </select>
+                            />
                         </div>
                         <div>
                             <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment</label>
@@ -249,52 +253,62 @@ const Purchases = () => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {formData.items.map((item, index) => (
-                                <div key={index} className="purchase-row" style={{ 
-                                    display: 'grid', 
-                                    gridTemplateColumns: '4fr 1.5fr 2fr 2fr 44px', 
-                                    gap: '12px', 
-                                    alignItems: 'end',
-                                    backgroundColor: 'white',
-                                    padding: '12px',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--border)'
-                                }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>PRODUCT</label>
-                                        <select
-                                            required value={item.product} onChange={e => handleItemChange(index, 'product', e.target.value)}
-                                            style={{ padding: '10px' }}
-                                        >
-                                            <option value="">Item...</option>
-                                            {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>CTNS</label>
-                                        <input
-                                            type="number" min="0.1" step="0.1" required
-                                            value={item.quantityInCartons} onChange={e => handleItemChange(index, 'quantityInCartons', parseFloat(e.target.value))}
-                                            style={{ fontWeight: '800', padding: '10px' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>COST</label>
-                                        <input
-                                            type="number" required
-                                            value={item.costPerCarton} onChange={e => handleItemChange(index, 'costPerCarton', parseFloat(e.target.value))}
-                                            style={{ fontWeight: '800', padding: '10px' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>TOTAL</label>
-                                        <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#f8fafc', fontWeight: '800', color: 'var(--text)', border: '1.5px solid var(--border)', fontSize: '0.9rem' }}>
-                                            {item.totalCost?.toLocaleString()}
+                                    <div style={{ 
+                                        display: 'grid', 
+                                        gridTemplateColumns: '3fr 1fr 1fr 1.5fr 1.5fr 44px', 
+                                        gap: '12px', 
+                                        alignItems: 'end',
+                                        backgroundColor: 'white',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border)'
+                                    }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>PRODUCT</label>
+                                            <SearchableSelect
+                                                options={products}
+                                                value={item.product}
+                                                onChange={e => handleItemChange(index, 'product', e.target.value)}
+                                                placeholder="Item..."
+                                                required
+                                            />
                                         </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>UNIT</label>
+                                            <select
+                                                value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)}
+                                                style={{ padding: '10px', fontWeight: '700' }}
+                                            >
+                                                <option value="Carton">Ctn</option>
+                                                <option value="Piece">Pcs</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>QTY</label>
+                                            <input
+                                                type="number" min="1" required
+                                                value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
+                                                style={{ fontWeight: '800', padding: '10px' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>COST RATE</label>
+                                            <input
+                                                type="number" required
+                                                value={item.costAtPurchase} onChange={e => handleItemChange(index, 'costAtPurchase', parseFloat(e.target.value))}
+                                                style={{ fontWeight: '800', padding: '10px' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>TOTAL</label>
+                                            <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#f8fafc', fontWeight: '800', color: 'var(--text)', border: '1.5px solid var(--border)', fontSize: '0.9rem' }}>
+                                                {item.totalCost?.toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
-                                    <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
                             ))}
                         </div>
                     </div>
@@ -331,9 +345,10 @@ const Purchases = () => {
                     padding: 12px !important;
                 }
                 .purchase-row > div:first-child { grid-column: span 2; }
-                .purchase-row > div:nth-child(4) { grid-column: span 1; }
+                .purchase-row > div:nth-child(2), .purchase-row > div:nth-child(3) { grid-column: span 1; }
+                .purchase-row > div:nth-child(4), .purchase-row > div:nth-child(5) { grid-column: span 1; }
                 .purchase-row > button { 
-                    grid-column: span 1; 
+                    grid-column: span 2; 
                     width: 100% !important;
                 }
                }

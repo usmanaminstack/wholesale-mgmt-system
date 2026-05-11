@@ -30,24 +30,40 @@ exports.createPurchase = async (req, res) => {
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const oldQty = product.stockInPieces;
-                const oldCost = product.costPricePerPiece;
-                const newQty = item.quantityInCartons * product.piecesPerCarton;
-                const newTotalCost = item.totalCost;
+                const oldQty = product.stockInPieces || 0;
+                const oldCost = product.costPricePerPiece || 0;
+                
+                const piecesPerCtn = product.piecesPerCarton || 1;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const costRate = item.costAtPurchase || item.costPerCarton || 0;
+                const newQtyPieces = item.unit === 'Carton' ? (qty * piecesPerCtn) : qty;
+                const newTotalCost = item.totalCost || (qty * costRate) || 0;
 
-                const totalQty = oldQty + newQty;
+                const totalQty = oldQty + newQtyPieces;
                 if (totalQty > 0) {
-                    const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
-                    product.costPricePerPiece = newAvgCostPerPiece;
-                    product.costPricePerCarton = newAvgCostPerPiece * product.piecesPerCarton;
-                } else if (totalQty === 0 && newQty > 0) {
-                    // If it was negative and now exactly zero, use the new purchase rate
-                    product.costPricePerCarton = item.costPerCarton;
-                    product.costPricePerPiece = item.costPerCarton / product.piecesPerCarton;
+                    if (oldQty <= 0) {
+                        // If stock was 0 or negative, reset average cost to the new purchase price
+                        const costRate = item.costAtPurchase || item.costPerCarton || 0;
+                        product.costPricePerPiece = costRate / (item.unit === 'Carton' ? piecesPerCtn : 1);
+                    } else {
+                        const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
+                        product.costPricePerPiece = newAvgCostPerPiece;
+                    }
+                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
+                } else if (totalQty === 0 && newQtyPieces > 0) {
+                    const costRate = item.costAtPurchase || item.costPerCarton || 0;
+                    product.costPricePerPiece = costRate / (item.unit === 'Carton' ? piecesPerCtn : 1);
+                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
                 }
 
-                product.lastPurchasePricePerCarton = item.costPerCarton;
-                product.lastPurchasePricePerPiece = item.costPerCarton / product.piecesPerCarton;
+                // Update Last Purchase Prices
+                if (item.unit === 'Carton') {
+                    product.lastPurchasePricePerCarton = item.costAtPurchase;
+                    product.lastPurchasePricePerPiece = item.costAtPurchase / piecesPerCtn;
+                } else {
+                    product.lastPurchasePricePerPiece = item.costAtPurchase;
+                    product.lastPurchasePricePerCarton = item.costAtPurchase * piecesPerCtn;
+                }
 
                 product.stockInPieces = totalQty;
                 await product.save();
@@ -130,7 +146,9 @@ exports.updatePurchase = async (req, res) => {
         for (const item of originalPurchase.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                product.stockInPieces -= (item.quantityInCartons * product.piecesPerCarton);
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
+                product.stockInPieces -= piecesToReduce;
                 await product.save();
             }
         }
@@ -152,20 +170,28 @@ exports.updatePurchase = async (req, res) => {
         const balanceAmount = grandTotal - paidAmount;
 
         // 4. Apply New Stock & Re-calc Average Cost
-        // Note: For simplicity in update, we treat the removal as subtracting from value and addition as adding to value
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const oldQty = product.stockInPieces;
-                const oldCost = product.costPricePerPiece;
-                const newQty = item.quantityInCartons * product.piecesPerCarton;
-                const newTotalCost = item.totalCost;
+                const oldQty = product.stockInPieces || 0;
+                const oldCost = product.costPricePerPiece || 0;
+                
+                const piecesPerCtn = product.piecesPerCarton || 1;
+                const qty = item.quantity || item.quantityInCartons || 0;
+                const costRate = item.costAtPurchase || item.costPerCarton || 0;
+                const newQtyPieces = item.unit === 'Carton' ? (qty * piecesPerCtn) : qty;
+                const newTotalCost = item.totalCost || (qty * costRate) || 0;
 
-                const totalQty = oldQty + newQty;
+                const totalQty = oldQty + newQtyPieces;
                 if (totalQty > 0) {
-                    const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
-                    product.costPricePerPiece = newAvgCostPerPiece;
-                    product.costPricePerCarton = newAvgCostPerPiece * product.piecesPerCarton;
+                    if (oldQty <= 0) {
+                        const costRate = item.costAtPurchase || item.costPerCarton || 0;
+                        product.costPricePerPiece = costRate / (item.unit === 'Carton' ? piecesPerCtn : 1);
+                    } else {
+                        const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
+                        product.costPricePerPiece = newAvgCostPerPiece;
+                    }
+                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
                 }
                 product.stockInPieces = totalQty;
                 await product.save();
@@ -229,17 +255,18 @@ exports.deletePurchase = async (req, res) => {
         for (const item of purchase.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const currentQty = product.stockInPieces;
-                const currentCost = product.costPricePerPiece;
-                const removeQty = item.quantityInCartons * product.piecesPerCarton;
+                const currentQty = product.stockInPieces || 0;
+                const currentCost = product.costPricePerPiece || 0;
+                
+                const piecesPerCtn = product.piecesPerCarton || 1;
+                const removeQty = item.unit === 'Carton' ? (item.quantity * piecesPerCtn) : item.quantity;
                 const removeValue = item.totalCost;
 
                 const newQty = currentQty - removeQty;
                 if (newQty > 0) {
-                    // Try to back-calculate the previous average cost
                     const newValue = (currentQty * currentCost) - removeValue;
                     product.costPricePerPiece = newValue / newQty;
-                    product.costPricePerCarton = product.costPricePerPiece * product.piecesPerCarton;
+                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
                 }
                 product.stockInPieces = newQty;
                 await product.save();

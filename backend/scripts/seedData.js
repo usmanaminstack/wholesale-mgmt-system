@@ -60,7 +60,7 @@ const seedData = async () => {
         console.log('Day -2: Purchase 10 @ 1000');
         const p1 = await new Purchase({
             supplier: supplier._id,
-            items: [{ product: prodA._id, quantityInCartons: 10, costPerCarton: 1000, totalCost: 10000 }],
+            items: [{ product: prodA._id, quantity: 10, unit: 'Carton', costAtPurchase: 1000, totalCost: 10000 }],
             grandTotal: 10000, paidAmount: 0, balanceAmount: 10000, paymentType: 'Credit', purchaseDate: getDate(2)
         }).save();
         prodA.stockInPieces = 100; // 10 cartons * 10 pieces
@@ -89,7 +89,7 @@ const seedData = async () => {
         console.log('Day -1: Purchase 10 @ 1200');
         const p2 = await new Purchase({
             supplier: supplier._id,
-            items: [{ product: prodA._id, quantityInCartons: 10, costPerCarton: 1200, totalCost: 12000 }],
+            items: [{ product: prodA._id, quantity: 10, unit: 'Carton', costAtPurchase: 1200, totalCost: 12000 }],
             grandTotal: 12000, paidAmount: 12000, balanceAmount: 0, paymentType: 'Cash', purchaseDate: getDate(1)
         }).save();
 

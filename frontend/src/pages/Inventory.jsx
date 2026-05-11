@@ -88,7 +88,9 @@ const Inventory = () => {
     };
 
     const filteredProducts = products.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const nameMatch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const customerNameMatch = p.customerProductName?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = nameMatch || customerNameMatch;
         const matchesStatus = showInactive ? true : p.isActive !== false;
         return matchesSearch && matchesStatus;
     });
