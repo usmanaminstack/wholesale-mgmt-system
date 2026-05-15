@@ -379,13 +379,13 @@ const Sales = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', marginBottom: '32px' }}>
+                    <div className="sales-meta-section" style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', marginBottom: '32px' }}>
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                             <button type="button" onClick={() => setFormData({ ...formData, isRetail: true })} style={{ flex: 1, backgroundColor: formData.isRetail ? 'var(--primary)' : 'white', color: formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Retail Sale</button>
                             <button type="button" onClick={() => setFormData({ ...formData, isRetail: false })} style={{ flex: 1, backgroundColor: !formData.isRetail ? 'var(--primary)' : 'white', color: !formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Wholesale Sale</button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+                        <div className="sales-meta-grid">
                             <div>
                                 <label>Customer Type</label>
                                 <SearchableSelect
@@ -440,9 +440,9 @@ const Sales = () => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {formData.items.map((item, index) => (
-                                <div key={index} className="invoice-row" style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.5fr 1.5fr 48px', gap: '16px', alignItems: 'end', backgroundColor: 'white', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                    <div>
-                                        <label className="desktop-only">Product Selection</label>
+                                <div key={index} className="invoice-row">
+                                    <div className="inv-product">
+                                        <label>Product Selection</label>
                                         <SearchableSelect
                                             options={products.filter(p => showOutOfStock || p.stockInPieces > 0 || item.product === p._id)}
                                             value={item.product}
@@ -451,75 +451,77 @@ const Sales = () => {
                                             required
                                         />
                                     </div>
-                                    <div>
-                                        <label className="desktop-only">Unit</label>
+                                    <div className="inv-unit">
+                                        <label>Unit</label>
                                         <select value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)} >
                                             <option value="Carton">Cartons</option>
                                             <option value="Piece">Pieces</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="desktop-only">Qty</label>
+                                    <div className="inv-qty">
+                                        <label>Qty</label>
                                         <input type="number" min="1" required value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))} />
                                     </div>
-                                    <div>
-                                        <label className="desktop-only">Price</label>
+                                    <div className="inv-price">
+                                        <label>Price</label>
                                         <input type="number" required value={item.priceAtSale} onChange={e => handleItemChange(index, 'priceAtSale', parseFloat(e.target.value))} />
                                     </div>
-                                    <div>
-                                        <label className="desktop-only">Subtotal</label>
-                                        <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', fontWeight: '800', textAlign: 'right' }}>{item.totalPrice?.toLocaleString()}</div>
+                                    <div className="inv-total">
+                                        <label>Subtotal</label>
+                                        <div className="subtotal-display">{item.totalPrice?.toLocaleString()}</div>
                                     </div>
-                                    <button type="button" onClick={() => removeItem(index)} style={{ padding: '12px', color: 'var(--danger)', border: 'none', background: '#fff1f2', borderRadius: '10px', cursor: 'pointer' }}><Trash2 size={20} /></button>
+                                    <div className="inv-remove">
+                                        <button type="button" onClick={() => removeItem(index)}><Trash2 size={20} /></button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     <div style={{ borderTop: '2px solid var(--border)', paddingTop: '32px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+                        <div className="sales-footer-grid">
                             <div style={{ color: 'var(--text-muted)' }} className="desktop-only">
                                 <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>• Stock will be automatically adjusted.</p>
                                 <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>• For credit sales, a ledger entry will be created.</p>
                                 <p style={{ margin: '0', fontSize: '0.9rem' }}>• Print option available after saving.</p>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Previous Balance:</span>
+                            <div className="sales-summary-panel">
+                                <div className="summary-row">
+                                    <span>Previous Balance:</span>
                                     <input
                                         type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
                                         value={formData.previousBalance} onChange={e => setFormData({ ...formData, previousBalance: parseFloat(e.target.value) || 0 })}
                                     />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Gross Total:</span>
+                                <div className="summary-row">
+                                    <span>Gross Total:</span>
                                     <span style={{ fontWeight: '700' }}>PKR {totalAmount?.toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Discount:</span>
+                                <div className="summary-row">
+                                    <span>Discount:</span>
                                     <input
                                         type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right', color: 'var(--accent)' }}
                                         value={formData.discount} onChange={e => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
                                     />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: 'var(--primary-light)', borderRadius: '12px' }}>
-                                    <span style={{ fontWeight: '800', color: 'var(--primary-dark)', fontSize: '1.1rem' }}>Net Total:</span>
-                                    <span style={{ fontWeight: '900', color: 'var(--primary)', fontSize: '1.3rem' }}>PKR {(totalAmount - formData.discount)?.toLocaleString()}</span>
+                                <div className="summary-row net-total-box">
+                                    <span>Net Total:</span>
+                                    <span>PKR {(totalAmount - formData.discount)?.toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Amount Received:</span>
+                                <div className="summary-row">
+                                    <span>Amount Received:</span>
                                     <input
                                         type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
                                         value={formData.receivedAmount} onChange={e => setFormData({ ...formData, receivedAmount: parseFloat(e.target.value) || 0 })}
                                     />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '700', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>Invoice Due:</span>
-                                    <span style={{ fontWeight: '900', color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)', fontSize: '1.1rem' }}>PKR {(totalAmount - formData.discount - formData.receivedAmount)?.toLocaleString()}</span>
+                                <div className="summary-row invoice-due-row">
+                                    <span style={{ color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>Invoice Due:</span>
+                                    <span style={{ color: (totalAmount - formData.discount - formData.receivedAmount) > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {(totalAmount - formData.discount - formData.receivedAmount)?.toLocaleString()}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderTop: '1px solid var(--border)', marginTop: '8px' }}>
-                                    <span style={{ fontWeight: '800', color: 'var(--text)' }}>Total Outstanding:</span>
-                                    <span style={{ fontWeight: '900', color: 'var(--text)', fontSize: '1.2rem' }}>PKR {(formData.previousBalance + (totalAmount - formData.discount - formData.receivedAmount))?.toLocaleString()}</span>
+                                <div className="summary-row outstanding-row">
+                                    <span>Total Outstanding:</span>
+                                    <span>PKR {(formData.previousBalance + (totalAmount - formData.discount - formData.receivedAmount))?.toLocaleString()}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
                                     <button type="submit" className="primary" style={{ flex: 2, padding: '16px', fontSize: '1.1rem', borderRadius: '16px', border: 'none', cursor: 'pointer' }}>
@@ -688,6 +690,106 @@ const Sales = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
+                .sales-meta-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    gap: 20px;
+                }
+                .invoice-row {
+                    display: grid; 
+                    grid-template-columns: 3fr 1.5fr 1fr 1.5fr 1.5fr 48px; 
+                    gap: 16px; 
+                    align-items: end; 
+                    background-color: white; 
+                    padding: 16px; 
+                    border-radius: 16px; 
+                    border: 1px solid var(--border);
+                }
+                .invoice-row label {
+                    font-size: 0.7rem; 
+                    margin-bottom: 4px; 
+                    color: var(--text-muted); 
+                    font-weight: 800; 
+                    text-transform: uppercase;
+                }
+                .subtotal-display {
+                    padding: 12px; 
+                    border-radius: 10px; 
+                    background-color: #f8fafc; 
+                    fontWeight: 800; 
+                    text-align: right;
+                    height: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    border: 1px solid var(--border);
+                }
+                .inv-remove button {
+                    padding: 12px; 
+                    color: var(--danger); 
+                    border: none; 
+                    background: #fff1f2; 
+                    border-radius: 10px; 
+                    cursor: pointer;
+                    width: 48px;
+                    height: 48px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .sales-footer-grid {
+                    display: grid; 
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+                    gap: 32px;
+                }
+                .sales-summary-panel {
+                    display: flex; 
+                    flex-direction: column; 
+                    gap: 16px;
+                }
+                .summary-row {
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center;
+                }
+                .summary-row > span:first-child {
+                    fontWeight: 600; 
+                    color: var(--text-muted);
+                }
+                .net-total-box {
+                    padding: 16px; 
+                    background-color: var(--primary-light); 
+                    border-radius: 12px;
+                }
+                .net-total-box span:first-child {
+                    fontWeight: 800; 
+                    color: var(--primary-dark); 
+                    fontSize: 1.1rem;
+                }
+                .net-total-box span:last-child {
+                    fontWeight: 900; 
+                    color: var(--primary); 
+                    fontSize: 1.3rem;
+                }
+                .invoice-due-row span {
+                    fontWeight: 900;
+                    fontSize: 1.1rem;
+                }
+                .outstanding-row {
+                    padding: 12px; 
+                    border-top: 1px solid var(--border); 
+                    margin-top: 8px;
+                }
+                .outstanding-row span:first-child {
+                    fontWeight: 800; 
+                    color: var(--text);
+                }
+                .outstanding-row span:last-child {
+                    fontWeight: 900; 
+                    color: var(--text); 
+                    fontSize: 1.2rem;
+                }
+
                @media print {
                 body * { visibility: hidden; }
                 .pos-receipt, .pos-receipt * { visibility: visible; }
@@ -695,14 +797,22 @@ const Sales = () => {
                 .no-print, .modal-overlay { display: none !important; }
                 .modal-content { background: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
               }
+
               @media (max-width: 768px) {
-                .header-actions { width: 100%; }
-                .header-actions button { width: 100%; }
-                .invoice-row { grid-template-columns: 1fr 1fr !important; gap: 12px !important; padding: 12px !important; }
-                .invoice-row > div:first-child { grid-column: span 2; }
-                .invoice-row > div:nth-child(5) { grid-column: span 2; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 4px; }
-                .invoice-row label { display: block !important; font-size: 0.7rem; margin-bottom: 2px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
-                .invoice-row button { grid-column: span 2; margin-top: 4px; height: 40px !important; }
+                .sales-meta-grid { grid-template-columns: 1fr; }
+                .invoice-row { 
+                    grid-template-columns: 1fr 1fr !important; 
+                    gap: 12px !important; 
+                    padding: 16px !important; 
+                }
+                .inv-product { grid-column: span 2; }
+                .inv-unit, .inv-qty { grid-column: span 1; }
+                .inv-price, .inv-total { grid-column: span 1; }
+                .inv-total { border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 4px; grid-column: span 2; }
+                .inv-remove { grid-column: span 2; }
+                .inv-remove button { width: 100%; margin-top: 8px; }
+                .sales-summary-panel { gap: 12px; }
+                .summary-row { flex-direction: row; justify-content: space-between; }
                 .modal-content { padding: 16px !important; }
               }
             `}} />

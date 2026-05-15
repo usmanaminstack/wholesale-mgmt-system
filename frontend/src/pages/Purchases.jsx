@@ -217,7 +217,7 @@ const Purchases = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="purchase-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                    <div className="purchase-meta-grid" style={{ marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
                         <div>
                             <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Date</label>
                             <input type="date" required value={formData.purchaseDate} onChange={e => setFormData({ ...formData, purchaseDate: e.target.value })} style={{ padding: '10px' }} />
@@ -253,18 +253,9 @@ const Purchases = () => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {formData.items.map((item, index) => (
-                                    <div style={{ 
-                                        display: 'grid', 
-                                        gridTemplateColumns: '3fr 1fr 1fr 1.5fr 1.5fr 44px', 
-                                        gap: '12px', 
-                                        alignItems: 'end',
-                                        backgroundColor: 'white',
-                                        padding: '12px',
-                                        borderRadius: '12px',
-                                        border: '1px solid var(--border)'
-                                    }}>
-                                        <div>
-                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>PRODUCT</label>
+                                    <div key={index} className="purchase-item-row">
+                                        <div className="item-product">
+                                            <label>PRODUCT</label>
                                             <SearchableSelect
                                                 options={products}
                                                 value={item.product}
@@ -273,8 +264,8 @@ const Purchases = () => {
                                                 required
                                             />
                                         </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>UNIT</label>
+                                        <div className="item-unit">
+                                            <label>UNIT</label>
                                             <select
                                                 value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)}
                                                 style={{ padding: '10px', fontWeight: '700' }}
@@ -283,31 +274,33 @@ const Purchases = () => {
                                                 <option value="Piece">Pcs</option>
                                             </select>
                                         </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>QTY</label>
+                                        <div className="item-qty">
+                                            <label>QTY</label>
                                             <input
                                                 type="number" min="1" required
                                                 value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
                                                 style={{ fontWeight: '800', padding: '10px' }}
                                             />
                                         </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>COST RATE</label>
+                                        <div className="item-rate">
+                                            <label>COST RATE</label>
                                             <input
                                                 type="number" required
                                                 value={item.costAtPurchase} onChange={e => handleItemChange(index, 'costAtPurchase', parseFloat(e.target.value))}
                                                 style={{ fontWeight: '800', padding: '10px' }}
                                             />
                                         </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px' }}>TOTAL</label>
-                                            <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#f8fafc', fontWeight: '800', color: 'var(--text)', border: '1.5px solid var(--border)', fontSize: '0.9rem' }}>
+                                        <div className="item-total">
+                                            <label>TOTAL</label>
+                                            <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#f8fafc', fontWeight: '800', color: 'var(--text)', border: '1.5px solid var(--border)', fontSize: '0.9rem', height: '44px', display: 'flex', alignItems: 'center' }}>
                                                 {item.totalCost?.toLocaleString()}
                                             </div>
                                         </div>
-                                        <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="item-remove">
+                                            <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                             ))}
                         </div>
@@ -315,12 +308,12 @@ const Purchases = () => {
 
                     <div style={{ borderTop: '2px solid var(--border)', paddingTop: '24px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                                <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>Total: <span style={{ color: 'var(--primary)' }}>PKR {grandTotal?.toLocaleString()}</span></div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#f0fdf4', padding: '12px 16px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
-                                    <label style={{ fontWeight: '800', color: '#166534', fontSize: '0.85rem' }}>PAID:</label>
+                            <div className="purchase-footer-summary">
+                                <div className="grand-total-display">Total: <span style={{ color: 'var(--primary)' }}>PKR {grandTotal?.toLocaleString()}</span></div>
+                                <div className="paid-amount-input">
+                                    <label>PAID:</label>
                                     <input
-                                        type="number" style={{ width: '120px', fontSize: '1rem', fontWeight: '900', border: '1.5px solid #86efac', padding: '6px 10px' }}
+                                        type="number" 
                                         value={formData.paidAmount} onChange={e => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })}
                                     />
                                 </div>
@@ -338,20 +331,95 @@ const Purchases = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-               @media (max-width: 768px) {
-                .purchase-row { 
-                    grid-template-columns: 1fr 1fr !important; 
-                    gap: 8px !important; 
-                    padding: 12px !important;
+                .purchase-meta-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 16px;
                 }
-                .purchase-row > div:first-child { grid-column: span 2; }
-                .purchase-row > div:nth-child(2), .purchase-row > div:nth-child(3) { grid-column: span 1; }
-                .purchase-row > div:nth-child(4), .purchase-row > div:nth-child(5) { grid-column: span 1; }
-                .purchase-row > button { 
-                    grid-column: span 2; 
-                    width: 100% !important;
+                .purchase-item-row {
+                    display: grid; 
+                    grid-template-columns: 3fr 1fr 1fr 1.5fr 1.5fr 44px; 
+                    gap: 12px; 
+                    align-items: end;
+                    backgroundColor: white;
+                    padding: 12px;
+                    border-radius: 12px;
+                    border: 1px solid var(--border);
                 }
-               }
+                .purchase-item-row label {
+                    font-size: 0.65rem; 
+                    fontWeight: 800; 
+                    color: var(--text-muted); 
+                    margin-bottom: 4px;
+                }
+                .purchase-footer-summary {
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center; 
+                    flex-wrap: wrap; 
+                    gap: 12px;
+                }
+                .grand-total-display {
+                    font-size: 1.25rem; 
+                    fontWeight: 900;
+                }
+                .paid-amount-input {
+                    display: flex; 
+                    align-items: center; 
+                    gap: 12px; 
+                    background-color: #f0fdf4; 
+                    padding: 12px 16px; 
+                    border-radius: 12px; 
+                    border: 1px solid #bbf7d0;
+                }
+                .paid-amount-input label {
+                    font-weight: 800; 
+                    color: #166534; 
+                    font-size: 0.85rem;
+                    margin-bottom: 0;
+                }
+                .paid-amount-input input {
+                    width: 120px; 
+                    font-size: 1rem; 
+                    font-weight: 900; 
+                    border: 1.5px solid #86efac; 
+                    padding: 6px 10px;
+                }
+
+                @media (max-width: 768px) {
+                    .purchase-meta-grid {
+                        grid-template-columns: 1fr;
+                        gap: 12px;
+                    }
+                    .purchase-item-row { 
+                        grid-template-columns: 1fr 1fr !important; 
+                        gap: 12px !important; 
+                        padding: 16px !important;
+                    }
+                    .item-product { grid-column: span 2; }
+                    .item-unit, .item-qty { grid-column: span 1; }
+                    .item-rate, .item-total { grid-column: span 1; }
+                    .item-remove { 
+                        grid-column: span 2; 
+                        width: 100% !important;
+                    }
+                    .item-remove button {
+                        width: 100% !important;
+                        background: #fef2f2 !important;
+                        color: var(--danger) !important;
+                        border: 1px solid #fee2e2 !important;
+                    }
+                    .purchase-footer-summary {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+                    .paid-amount-input {
+                        justify-content: space-between;
+                    }
+                    .paid-amount-input input {
+                        width: 50%;
+                    }
+                }
             `}} />
         </div>
     );
