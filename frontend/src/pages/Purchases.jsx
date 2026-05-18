@@ -58,7 +58,7 @@ const Purchases = () => {
             supplier: p.supplier?._id || p.supplier,
             paymentType: p.paymentType,
             paidAmount: p.paidAmount,
-            purchaseDate: new Date(p.purchaseDate).toISOString().split('T')[0],
+            purchaseDate: p.purchaseDate ? getLocalDateString(new Date(p.purchaseDate)) : getLocalDateString(),
             items: p.items.map(item => ({
                 product: item.product?._id || item.product,
                 quantity: item.quantity || item.quantityInCartons || 0,
@@ -144,7 +144,7 @@ const Purchases = () => {
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={() => { setIsEditing(false); setEditingPurchase(null); setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() }); setShowModal(true); }}
                         className="primary desktop-only"
                         style={{ padding: '14px 28px', borderRadius: '14px' }}
                     >
@@ -153,7 +153,7 @@ const Purchases = () => {
                 </div>
             </div>
 
-            <button onClick={() => setShowModal(true)} className="fab-button mobile-only" title="New Purchase">
+            <button onClick={() => { setIsEditing(false); setEditingPurchase(null); setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() }); setShowModal(true); }} className="fab-button mobile-only" title="New Purchase">
                 <Plus size={32} />
             </button>
 

@@ -41,8 +41,9 @@ const Expenses = () => {
         setFormData({
             category: e.category,
             amount: e.amount,
-            description: e.description,
-            expenseDate: new Date(e.expenseDate).toISOString().split('T')[0]
+            description: e.description || '',
+            paymentMethod: e.paymentMethod || 'Cash',
+            expenseDate: e.expenseDate ? getLocalDateString(new Date(e.expenseDate)) : getLocalDateString()
         });
         setShowModal(true);
     };
@@ -58,7 +59,7 @@ const Expenses = () => {
             setShowModal(false);
             setIsEditing(false);
             setEditingExpense(null);
-            setFormData({ category: '', amount: 0, description: '', expenseDate: new Date().toISOString().split('T')[0] });
+            setFormData({ category: '', amount: 0, description: '', paymentMethod: 'Cash', expenseDate: getLocalDateString() });
             fetchExpenses();
         } catch (err) {
             alert(err.message);
@@ -83,13 +84,13 @@ const Expenses = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => setShowModal(true)} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => { setIsEditing(false); setEditingExpense(null); setFormData({ category: '', amount: 0, description: '', paymentMethod: 'Cash', expenseDate: getLocalDateString() }); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> Add Expense
                     </button>
                 </div>
             </div>
 
-            <button onClick={() => setShowModal(true)} className="fab-button mobile-only" title="Add Expense">
+            <button onClick={() => { setIsEditing(false); setEditingExpense(null); setFormData({ category: '', amount: 0, description: '', paymentMethod: 'Cash', expenseDate: getLocalDateString() }); setShowModal(true); }} className="fab-button mobile-only" title="Add Expense">
                 <Plus size={32} />
             </button>
 

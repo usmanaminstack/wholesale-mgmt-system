@@ -16,6 +16,7 @@ const Payments = () => {
         entityId: '',
         amount: 0,
         paymentMethod: 'Cash',
+        paymentDate: getLocalDateString(),
         note: ''
     });
 
@@ -62,7 +63,7 @@ const Payments = () => {
         try {
             await api.post('/payments', formData);
             setShowModal(false);
-            setFormData({ entityType: 'Customer', entityId: '', amount: 0, paymentMethod: 'Cash', note: '' });
+            setFormData({ entityType: 'Customer', entityId: '', amount: 0, paymentMethod: 'Cash', paymentDate: getLocalDateString(), note: '' });
             fetchPayments();
         } catch (err) {
             alert(err.message);
@@ -87,13 +88,13 @@ const Payments = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => setShowModal(true)} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => { setFormData({ entityType: 'Customer', entityId: '', amount: 0, paymentMethod: 'Cash', paymentDate: getLocalDateString(), note: '' }); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> Record Entry
                     </button>
                 </div>
             </div>
 
-            <button data-testid="record-payment-fab" onClick={() => setShowModal(true)} className="fab-button mobile-only" title="Record Payment">
+            <button data-testid="record-payment-fab" onClick={() => { setFormData({ entityType: 'Customer', entityId: '', amount: 0, paymentMethod: 'Cash', paymentDate: getLocalDateString(), note: '' }); setShowModal(true); }} className="fab-button mobile-only" title="Record Payment">
                 <Plus size={32} />
             </button>
 
@@ -248,6 +249,11 @@ const Payments = () => {
                                 <option value="Cheque">Cheque</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Transaction Date</label>
+                        <input type="date" required value={formData.paymentDate} onChange={e => setFormData({ ...formData, paymentDate: e.target.value })} />
                     </div>
 
                     <div>

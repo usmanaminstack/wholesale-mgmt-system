@@ -33,6 +33,7 @@ const Sales = () => {
         discount: 0,
         isRetail: true,
         previousBalance: 0,
+        saleDate: getLocalDateString(),
         items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
     });
 
@@ -108,6 +109,7 @@ const Sales = () => {
             receivedAmount: sale.receivedAmount,
             discount: sale.discount || 0,
             isRetail: sale.isRetail,
+            saleDate: sale.saleDate ? getLocalDateString(new Date(sale.saleDate)) : getLocalDateString(),
             items: sale.items.map(item => ({
                 product: item.product?._id || item.product,
                 quantity: item.quantity,
@@ -144,7 +146,7 @@ const Sales = () => {
             setShowModal(false);
             setIsEditing(false);
             setSelectedSale(null);
-            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
+            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
             fetchSales();
         } catch (err) {
             console.error(err);
@@ -295,13 +297,13 @@ const Sales = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] }); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> New Sale
                     </button>
                 </div>
             </div>
 
-            <button data-testid="new-sale-fab" onClick={() => { setIsEditing(false); setSelectedSale(null); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
+            <button data-testid="new-sale-fab" onClick={() => { setIsEditing(false); setSelectedSale(null); setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] }); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
                 <Plus size={32} />
             </button>
 
@@ -423,6 +425,10 @@ const Sales = () => {
                                     <option value="Cash">Cash Payment</option>
                                     <option value="Credit">Credit (Balance)</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label>Sale Date</label>
+                                <input type="date" required value={formData.saleDate} onChange={e => setFormData({ ...formData, saleDate: e.target.value })} />
                             </div>
                         </div>
                     </div>
