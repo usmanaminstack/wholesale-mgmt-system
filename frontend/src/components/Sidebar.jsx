@@ -11,7 +11,8 @@ import {
   BarChart3,
   X,
   Menu,
-  Droplets
+  Droplets,
+  BookOpen
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import logo from '../assets/logo.png';
@@ -26,6 +27,7 @@ const navItems = [
   { path: '/payments', name: 'Payments', icon: CreditCard },
   { path: '/expenses', name: 'Expenses', icon: Receipt },
   { path: '/reports', name: 'Reports', icon: BarChart3 },
+  { path: '/daily-ledger', name: 'Daily Ledger', icon: BookOpen },
 ];
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {

@@ -13,6 +13,7 @@ import Suppliers from './pages/Suppliers';
 import Payments from './pages/Payments';
 import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
+import DailyLedger from './pages/DailyLedger';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="payments" element={<Payments />} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="daily-ledger" element={<DailyLedger />} />
             </Route>
           </Routes>
         </BrowserRouter>

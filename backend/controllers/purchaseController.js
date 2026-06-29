@@ -26,46 +26,32 @@ exports.createPurchase = async (req, res) => {
 
         const savedPurchase = await purchase.save();
 
-        // Update Stock & Average Cost
+        // Update Stock & Cost — always use the actual new purchase price
+        // so that costAtSale on the next sale exactly matches what was paid
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const oldQty = product.stockInPieces || 0;
-                const oldCost = product.costPricePerPiece || 0;
-                
-                const piecesPerCtn = product.piecesPerCarton || 1;
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const costRate = item.costAtPurchase || item.costPerCarton || 0;
-                const newQtyPieces = item.unit === 'Carton' ? (qty * piecesPerCtn) : qty;
-                const newTotalCost = item.totalCost || (qty * costRate) || 0;
+                const piecesPerCtn  = product.piecesPerCarton || 1;
+                const qty           = item.quantity || 0;
+                const newQtyPieces  = item.unit === 'Carton' ? qty * piecesPerCtn : qty;
+                const purchaseRate  = item.costAtPurchase || 0;  // cost per carton or per piece
 
-                const totalQty = oldQty + newQtyPieces;
-                if (totalQty > 0) {
-                    if (oldQty <= 0) {
-                        // If stock was 0 or negative, reset average cost to the new purchase price
-                        const costRate = item.costAtPurchase || item.costPerCarton || 0;
-                        product.costPricePerPiece = costRate / (item.unit === 'Carton' ? piecesPerCtn : 1);
-                    } else {
-                        const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
-                        product.costPricePerPiece = newAvgCostPerPiece;
-                    }
-                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
-                } else if (totalQty === 0 && newQtyPieces > 0) {
-                    const costRate = item.costAtPurchase || item.costPerCarton || 0;
-                    product.costPricePerPiece = costRate / (item.unit === 'Carton' ? piecesPerCtn : 1);
-                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
-                }
+                // ── Cost per piece from this purchase ──────────────────────
+                const newCostPerPiece = item.unit === 'Carton'
+                    ? purchaseRate / piecesPerCtn
+                    : purchaseRate;
 
-                // Update Last Purchase Prices
-                if (item.unit === 'Carton') {
-                    product.lastPurchasePricePerCarton = item.costAtPurchase;
-                    product.lastPurchasePricePerPiece = item.costAtPurchase / piecesPerCtn;
-                } else {
-                    product.lastPurchasePricePerPiece = item.costAtPurchase;
-                    product.lastPurchasePricePerCarton = item.costAtPurchase * piecesPerCtn;
-                }
+                // ── Always set product cost to latest purchase price ───────
+                // This ensures costAtSale == actual purchase cost on next sale
+                product.costPricePerPiece   = newCostPerPiece;
+                product.costPricePerCarton  = newCostPerPiece * piecesPerCtn;
 
-                product.stockInPieces = totalQty;
+                // ── Last purchase price fields ─────────────────────────────
+                product.lastPurchasePricePerCarton = newCostPerPiece * piecesPerCtn;
+                product.lastPurchasePricePerPiece  = newCostPerPiece;
+
+                // ── Stock update ───────────────────────────────────────────
+                product.stockInPieces = (product.stockInPieces || 0) + newQtyPieces;
                 await product.save();
             }
         }
@@ -169,31 +155,24 @@ exports.updatePurchase = async (req, res) => {
         }
         const balanceAmount = grandTotal - paidAmount;
 
-        // 4. Apply New Stock & Re-calc Average Cost
+        // 4. Apply New Stock & Cost — always use actual new purchase price
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const oldQty = product.stockInPieces || 0;
-                const oldCost = product.costPricePerPiece || 0;
-                
-                const piecesPerCtn = product.piecesPerCarton || 1;
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const costRate = item.costAtPurchase || item.costPerCarton || 0;
-                const newQtyPieces = item.unit === 'Carton' ? (qty * piecesPerCtn) : qty;
-                const newTotalCost = item.totalCost || (qty * costRate) || 0;
+                const piecesPerCtn  = product.piecesPerCarton || 1;
+                const qty           = item.quantity || 0;
+                const newQtyPieces  = item.unit === 'Carton' ? qty * piecesPerCtn : qty;
+                const purchaseRate  = item.costAtPurchase || 0;
 
-                const totalQty = oldQty + newQtyPieces;
-                if (totalQty > 0) {
-                    if (oldQty <= 0) {
-                        const costRate = item.costAtPurchase || item.costPerCarton || 0;
-                        product.costPricePerPiece = costRate / (item.unit === 'Carton' ? piecesPerCtn : 1);
-                    } else {
-                        const newAvgCostPerPiece = ((oldQty * oldCost) + newTotalCost) / totalQty;
-                        product.costPricePerPiece = newAvgCostPerPiece;
-                    }
-                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
-                }
-                product.stockInPieces = totalQty;
+                const newCostPerPiece = item.unit === 'Carton'
+                    ? purchaseRate / piecesPerCtn
+                    : purchaseRate;
+
+                product.costPricePerPiece          = newCostPerPiece;
+                product.costPricePerCarton         = newCostPerPiece * piecesPerCtn;
+                product.lastPurchasePricePerCarton = newCostPerPiece * piecesPerCtn;
+                product.lastPurchasePricePerPiece  = newCostPerPiece;
+                product.stockInPieces = (product.stockInPieces || 0) + newQtyPieces;
                 await product.save();
             }
         }
