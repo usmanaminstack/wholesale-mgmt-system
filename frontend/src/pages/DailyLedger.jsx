@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import {
   Calendar,
   TrendingUp,
@@ -19,8 +19,6 @@ import {
   User,
   Store
 } from 'lucide-react';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // ─── helpers ─────────────────────────────────────────────────
 const fmt = (n) =>
@@ -257,7 +255,7 @@ export default function DailyLedger() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API}/reports/daily-ledger`, {
+      const res = await api.get('/reports/daily-ledger', {
         params: { from: fromDate, to: toDate }
       });
       setData(res.data);
