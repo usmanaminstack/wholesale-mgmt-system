@@ -7,7 +7,8 @@ exports.addLedgerEntry = async ({
     referenceId,
     debit = 0,
     credit = 0,
-    description
+    description,
+    date
 }) => {
     // Get last balance
     const lastEntry = await Ledger.findOne({ entityId, entityType }).sort({ date: -1 });
@@ -51,7 +52,8 @@ exports.addLedgerEntry = async ({
         debit,
         credit,
         balance: newBalance,
-        description
+        description,
+        date: date || undefined
     });
 
     await ledgerEntry.save();

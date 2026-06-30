@@ -45,7 +45,8 @@ exports.createReturn = async (req, res) => {
                     transactionType: 'Return',
                     referenceId: savedReturn._id,
                     credit: totalRefundAmount, // Credit decreases receivable
-                    description: `Sale Return - Ref: ${savedReturn._id} (Orig Sale: ${saleId})`
+                    description: `Sale Return - Ref: ${savedReturn._id} (Orig Sale: ${saleId})`,
+                    date: savedReturn.returnDate
                 });
             }
         }

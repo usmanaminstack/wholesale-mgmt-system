@@ -72,7 +72,8 @@ exports.createPurchase = async (req, res) => {
                 transactionType: 'Purchase',
                 referenceId: savedPurchase._id,
                 credit: grandTotal,
-                description: `Purchase - Ref: ${savedPurchase._id}`
+                description: `Purchase - Ref: ${savedPurchase._id}`,
+                date: purchaseDate
             });
 
             if (paidAmount > 0) {
@@ -82,7 +83,8 @@ exports.createPurchase = async (req, res) => {
                     transactionType: 'Payment',
                     referenceId: savedPurchase._id,
                     debit: paidAmount,
-                    description: `Payment for Purchase - Ref: ${savedPurchase._id}`
+                    description: `Payment for Purchase - Ref: ${savedPurchase._id}`,
+                    date: purchaseDate
                 });
             }
         }
@@ -191,7 +193,8 @@ exports.updatePurchase = async (req, res) => {
                 transactionType: 'Purchase',
                 referenceId: originalPurchase._id,
                 credit: grandTotal,
-                description: `Edited Purchase Adjustment - Ref: ${originalPurchase._id}`
+                description: `Edited Purchase Adjustment - Ref: ${originalPurchase._id}`,
+                date: purchaseDate
             });
 
             if (paidAmount > 0) {
@@ -201,7 +204,8 @@ exports.updatePurchase = async (req, res) => {
                     transactionType: 'Payment',
                     referenceId: originalPurchase._id,
                     debit: paidAmount,
-                    description: `Edited Payment Adjustment - Ref: ${originalPurchase._id}`
+                    description: `Edited Payment Adjustment - Ref: ${originalPurchase._id}`,
+                    date: purchaseDate
                 });
             }
         }

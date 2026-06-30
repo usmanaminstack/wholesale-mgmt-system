@@ -39,7 +39,7 @@ exports.updateCustomer = async (req, res) => {
 exports.getCustomerLedger = async (req, res) => {
     try {
         const Ledger = require('../models/Ledger');
-        const ledger = await Ledger.find({ entityId: req.params.id, entityType: 'Customer' }).sort({ date: -1 });
+        const ledger = await Ledger.find({ entityId: req.params.id, entityType: 'Customer' }).sort({ date: -1, createdAt: -1 });
         res.json(ledger);
     } catch (error) {
         res.status(500).json({ message: error.message });

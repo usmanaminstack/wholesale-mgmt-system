@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { Plus, User, Search, Phone, MapPin, DollarSign, Eye, History, X, CheckCircle, Trash2, ArrowRight } from 'lucide-react';
 import Modal from '../components/Modal';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const Customers = () => {
     const [customers, setCustomers] = useState([]);
@@ -10,7 +11,7 @@ const Customers = () => {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [ledger, setLedger] = useState([]);
     const [formData, setFormData] = useState({ name: '', phone: '', address: '', openingBalance: '' });
-    const [paymentData, setPaymentData] = useState({ amount: '', method: 'Cash', note: '' });
+    const [paymentData, setPaymentData] = useState({ amount: '', method: 'Cash', note: '', paymentDate: getLocalDateString() });
     const [searchTerm, setSearchTerm] = useState('');
     const [loadingLedger, setLoadingLedger] = useState(false);
 
@@ -52,10 +53,11 @@ const Customers = () => {
                 entityId: selectedCustomer._id,
                 amount: parseFloat(paymentData.amount),
                 paymentMethod: paymentData.method,
-                note: paymentData.note || `Manual payment from Ledger - ${new Date().toLocaleDateString()}`
+                note: paymentData.note || `Manual payment from Ledger - ${new Date().toLocaleDateString()}`,
+                paymentDate: paymentData.paymentDate
             };
             await api.post('/payments', paymentBody);
-            setPaymentData({ amount: '', method: 'Cash', note: '' });
+            setPaymentData({ amount: '', method: 'Cash', note: '', paymentDate: getLocalDateString() });
             fetchLedger(selectedCustomer._id);
             fetchCustomers();
         } catch (err) {}
@@ -247,7 +249,12 @@ const Customers = () => {
                                 <tbody>
                                     {ledger.map((entry, idx) => (
                                         <tr key={idx}>
-                                            <td data-label="Date">{new Date(entry.date).toLocaleDateString()}</td>
+                                            <td data-label="Date">
+                                                <div style={{ fontWeight: '700' }}>{new Date(entry.date).toLocaleDateString()}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                    Sys: {new Date(entry.createdAt).toLocaleDateString()}
+                                                </div>
+                                            </td>
                                             <td data-label="Type">
                                                 <span style={{
                                                     fontSize: '0.75rem',
@@ -309,6 +316,14 @@ const Customers = () => {
                                         <option value="Bank Transfer">Bank Transfer</option>
                                         <option value="Cheque">Post-dated Cheque</option>
                                     </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Payment Date</label>
+                                    <input
+                                        type="date" required
+                                        value={paymentData.paymentDate}
+                                        onChange={e => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
+                                    />
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Note / Reference</label>

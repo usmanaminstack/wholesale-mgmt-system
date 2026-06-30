@@ -31,7 +31,8 @@ exports.createPayment = async (req, res) => {
                     transactionType: 'Payment',
                     referenceId: savedPayment._id,
                     credit: amount,
-                    description: note || 'Customer Payment'
+                    description: note || 'Customer Payment',
+                    date: paymentDate
                 });
             }
         } else if (entityType === 'Supplier') {
@@ -47,7 +48,8 @@ exports.createPayment = async (req, res) => {
                     transactionType: 'Payment',
                     referenceId: savedPayment._id,
                     debit: amount,
-                    description: note || 'Supplier Payment'
+                    description: note || 'Supplier Payment',
+                    date: paymentDate
                 });
             }
         }

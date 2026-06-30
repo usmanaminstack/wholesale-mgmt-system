@@ -39,7 +39,7 @@ exports.updateSupplier = async (req, res) => {
 exports.getSupplierLedger = async (req, res) => {
     try {
         const Ledger = require('../models/Ledger');
-        const ledger = await Ledger.find({ entityId: req.params.id, entityType: 'Supplier' }).sort({ date: -1 });
+        const ledger = await Ledger.find({ entityId: req.params.id, entityType: 'Supplier' }).sort({ date: -1, createdAt: -1 });
         res.json(ledger);
     } catch (error) {
         res.status(500).json({ message: error.message });

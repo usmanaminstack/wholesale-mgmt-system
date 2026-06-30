@@ -86,7 +86,8 @@ exports.createSale = async (req, res) => {
                     transactionType: 'Sale',
                     referenceId: savedSale._id,
                     debit: netAmount,
-                    description: `Sale (Net) - Ref: ${savedSale._id}${discount > 0 ? ` (Disc: ${discount})` : ''}`
+                    description: `Sale (Net) - Ref: ${savedSale._id}${discount > 0 ? ` (Disc: ${discount})` : ''}`,
+                    date: saleDate
                 });
 
                 if (receivedAmount > 0) {
@@ -96,7 +97,8 @@ exports.createSale = async (req, res) => {
                         transactionType: 'Payment',
                         referenceId: savedSale._id,
                         credit: receivedAmount,
-                        description: `Payment for Sale - Ref: ${savedSale._id}`
+                        description: `Payment for Sale - Ref: ${savedSale._id}`,
+                        date: saleDate
                     });
                 }
             }
@@ -225,7 +227,8 @@ exports.updateSale = async (req, res) => {
                     transactionType: 'Sale',
                     referenceId: originalSale._id,
                     debit: totalAmount,
-                    description: `Edited Sale Adjustment - Ref: ${originalSale._id}`
+                    description: `Edited Sale Adjustment - Ref: ${originalSale._id}`,
+                    date: saleDate
                 });
 
                 if (receivedAmount > 0) {
@@ -235,7 +238,8 @@ exports.updateSale = async (req, res) => {
                         transactionType: 'Payment',
                         referenceId: originalSale._id,
                         credit: receivedAmount,
-                        description: `Edited Payment Adjustment - Ref: ${originalSale._id}`
+                        description: `Edited Payment Adjustment - Ref: ${originalSale._id}`,
+                        date: saleDate
                     });
                 }
             }
