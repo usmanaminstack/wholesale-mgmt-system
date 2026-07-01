@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { Plus, Truck, Search, Phone, MapPin, DollarSign, Briefcase, Trash2, History, X, CheckCircle, ArrowRight } from 'lucide-react';
 import Modal from '../components/Modal';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDate } from '../utils/dateUtils';
 
 const Suppliers = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -252,10 +252,7 @@ const Suppliers = () => {
                                     {ledger.map((entry, idx) => (
                                         <tr key={idx}>
                                             <td data-label="Date">
-                                                <div style={{ fontWeight: '700' }}>{new Date(entry.date).toLocaleDateString()}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                                    Sys: {new Date(entry.createdAt).toLocaleDateString()}
-                                                </div>
+                                                <div style={{ fontWeight: '700' }}>{formatDate(entry.date)}</div>
                                             </td>
                                             <td data-label="Type">
                                                 <span style={{

@@ -20,7 +20,7 @@ import {
     Info
 } from 'lucide-react';
 import Modal from '../components/Modal';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDate } from '../utils/dateUtils';
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
@@ -330,7 +330,7 @@ const Dashboard = () => {
                         <tbody>
                             {activities.map((act, i) => (
                                 <tr key={act._id}>
-                                    <td data-label="Date">{new Date(act.date).toLocaleDateString()}</td>
+                                    <td data-label="Date">{formatDate(act.date)}</td>
                                     <td data-label="Entity" style={{ fontWeight: '700' }}>{act.entityName}</td>
                                     <td data-label="Type">
                                         <span style={{
@@ -400,7 +400,7 @@ const Dashboard = () => {
                         <tbody>
                             {adjustments.map(adj => (
                                 <tr key={adj._id}>
-                                    <td>{new Date(adj.adjustmentDate).toLocaleDateString()}</td>
+                                    <td>{formatDate(adj.adjustmentDate)}</td>
                                     <td>
                                         <span style={{ 
                                             fontSize: '0.75rem', 

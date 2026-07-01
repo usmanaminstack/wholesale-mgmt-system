@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
 import { Plus, Receipt, Search, Filter, Trash2, PiggyBank, Edit2, X, Wallet, Calendar, ArrowRight } from 'lucide-react';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 
 const Expenses = () => {
@@ -137,7 +137,7 @@ const Expenses = () => {
                                             <div>
                                                 <div style={{ fontWeight: '800', color: 'var(--text)', fontSize: '0.95rem' }}>{e.description || 'General Expense'}</div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <Calendar size={12} /> {new Date(e.expenseDate).toLocaleDateString()}
+                                                    <Calendar size={12} /> {formatDate(e.expenseDate)}
                                                 </div>
                                             </div>
                                         </div>

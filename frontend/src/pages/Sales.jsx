@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import DateFilter from '../components/DateFilter';
 import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download, Share2, CheckCircle2, Search } from 'lucide-react';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 import SearchableSelect from '../components/SearchableSelect';
 
@@ -325,7 +325,7 @@ const Sales = () => {
                         <tbody>
                             {sales.map(s => (
                                 <tr key={s._id}>
-                                    <td data-label="Date">{new Date(s.saleDate).toLocaleDateString()}</td>
+                                    <td data-label="Date">{formatDate(s.saleDate)}</td>
                                     <td data-label="Customer" style={{ fontWeight: '700', color: 'var(--primary)' }}>{s.customer?.name || s.customerName || 'Guest'}</td>
                                     <td data-label="Total" style={{ fontWeight: '800' }}>{s.totalAmount?.toLocaleString()}</td>
                                     <td data-label="Recv">{s.receivedAmount?.toLocaleString()}</td>
@@ -582,7 +582,7 @@ const Sales = () => {
                         </div>
                         <div className="pos-receipt-info-item">
                             <span className="pos-receipt-info-label">Date</span>
-                            <span className="pos-receipt-info-value">{selectedSale && new Date(selectedSale.saleDate).toLocaleDateString()}</span>
+                            <span className="pos-receipt-info-value">{selectedSale && formatDate(selectedSale.saleDate)}</span>
                         </div>
                         <div className="pos-receipt-info-item" style={{ gridColumn: 'span 2' }}>
                             <span className="pos-receipt-info-label">Customer</span>

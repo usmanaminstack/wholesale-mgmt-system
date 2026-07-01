@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
 import { FileText, Calendar, Filter, PieChart, Info, TrendingUp, BarChart, Printer, Eye, Trash2 } from 'lucide-react';
-import { getLocalDateString, getDaysAgoDate } from '../utils/dateUtils';
+import { getLocalDateString, getDaysAgoDate, formatDate } from '../utils/dateUtils';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -305,7 +305,7 @@ const Reports = () => {
                                 <tbody>
                                     {sales.map(s => (
                                         <tr key={s._id}>
-                                            <td data-label="Date">{new Date(s.saleDate).toLocaleDateString()}</td>
+                                            <td data-label="Date">{formatDate(s.saleDate)}</td>
                                             <td data-label="Type"><span style={{ color: 'var(--success)', fontWeight: '800' }}>SALE</span></td>
                                             <td data-label="Entity">{s.customer?.name || s.customerName || 'Walk-in'}</td>
                                             <td data-label="Rev" style={{ fontWeight: '700' }}>{s.totalAmount.toLocaleString()}</td>
@@ -318,7 +318,7 @@ const Reports = () => {
                                     ))}
                                     {purchases.map(p => (
                                         <tr key={p._id}>
-                                            <td data-label="Date">{new Date(p.purchaseDate).toLocaleDateString()}</td>
+                                            <td data-label="Date">{formatDate(p.purchaseDate)}</td>
                                             <td data-label="Type"><span style={{ color: 'var(--danger)', fontWeight: '800' }}>PURCHASE</span></td>
                                             <td data-label="Entity">{p.supplier?.name || 'Unknown'}</td>
                                             <td data-label="Rev">—</td>
@@ -331,7 +331,7 @@ const Reports = () => {
                                     ))}
                                     {expenses.map(e => (
                                         <tr key={e._id}>
-                                            <td data-label="Date">{new Date(e.expenseDate).toLocaleDateString()}</td>
+                                            <td data-label="Date">{formatDate(e.expenseDate)}</td>
                                             <td data-label="Type"><span style={{ color: '#f59e0b', fontWeight: '800' }}>EXPENSE</span></td>
                                             <td data-label="Entity">{e.description || e.category}</td>
                                             <td data-label="Rev">—</td>
@@ -344,7 +344,7 @@ const Reports = () => {
                                     ))}
                                     {payments.map(py => (
                                         <tr key={py._id}>
-                                            <td data-label="Date">{new Date(py.paymentDate).toLocaleDateString()}</td>
+                                            <td data-label="Date">{formatDate(py.paymentDate)}</td>
                                             <td data-label="Type"><span style={{ color: '#8b5cf6', fontWeight: '800' }}>PAYMENT</span></td>
                                             <td data-label="Entity">{py.entityId?.name || 'Walk-in'} ({py.entityType})</td>
                                             <td data-label="Rev">{py.entityType === 'Customer' ? py.amount.toLocaleString() : '—'}</td>
@@ -357,7 +357,7 @@ const Reports = () => {
                                     ))}
                                     {returns.map(r => (
                                         <tr key={r._id}>
-                                            <td data-label="Date">{new Date(r.returnDate).toLocaleDateString()}</td>
+                                            <td data-label="Date">{formatDate(r.returnDate)}</td>
                                             <td data-label="Type"><span style={{ color: '#ec4899', fontWeight: '800' }}>RETURN</span></td>
                                             <td data-label="Entity">{r.customer?.name || 'Unknown'}</td>
                                             <td data-label="Rev">—</td>

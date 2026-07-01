@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
 import { Plus, CreditCard, ArrowRight, Wallet, UserCheck, Search, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, X, Info } from 'lucide-react';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 import SearchableSelect from '../components/SearchableSelect';
 
@@ -116,7 +116,7 @@ const Payments = () => {
                                 <tr key={p._id}>
                                     <td data-label="Date">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)', fontWeight: '700' }}>
-                                            <Calendar size={14} color="var(--primary)" /> {new Date(p.paymentDate).toLocaleDateString()}
+                                            <Calendar size={14} color="var(--primary)" /> {formatDate(p.paymentDate)}
                                         </div>
                                     </td>
                                     <td data-label="Type">

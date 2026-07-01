@@ -25,13 +25,13 @@ const fmt = (n) =>
   `Rs. ${Number(n || 0).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 const fmtDate = (iso) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-PK', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-PK', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 };
 
 const fmtShort = (iso) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-PK', { day: '2-digit', month: 'short' });
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 };
 
 const methodIcon = (m) => {
