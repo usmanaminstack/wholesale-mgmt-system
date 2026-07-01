@@ -39,8 +39,36 @@ exports.updateSupplier = async (req, res) => {
 exports.getSupplierLedger = async (req, res) => {
     try {
         const Ledger = require('../models/Ledger');
-        const ledger = await Ledger.find({ entityId: req.params.id, entityType: 'Supplier' }).sort({ date: -1, createdAt: -1 });
-        res.json(ledger);
+        const Purchase = require('../models/Purchase');
+        const Payment = require('../models/Payment');
+
+        const ledgerEntries = await Ledger.find({ entityId: req.params.id, entityType: 'Supplier' });
+
+        // Resolve dates from the actual transaction documents
+        const resolvedEntries = await Promise.all(ledgerEntries.map(async (entry) => {
+            let actualDate = entry.date;
+            if (entry.transactionType === 'Purchase') {
+                const purchase = await Purchase.findById(entry.referenceId);
+                if (purchase && purchase.purchaseDate) actualDate = purchase.purchaseDate;
+            } else if (entry.transactionType === 'Payment') {
+                const payment = await Payment.findById(entry.referenceId);
+                if (payment && payment.paymentDate) actualDate = payment.paymentDate;
+            }
+
+            // Return plain object with the resolved date
+            const obj = entry.toObject();
+            obj.date = actualDate;
+            return obj;
+        }));
+
+        // Sort descending by date, then createdAt
+        resolvedEntries.sort((a, b) => {
+            const dateDiff = new Date(b.date) - new Date(a.date);
+            if (dateDiff !== 0) return dateDiff;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        res.json(resolvedEntries);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { Plus, Truck, Search, Phone, MapPin, DollarSign, Briefcase, Trash2, History, X, CheckCircle, ArrowRight } from 'lucide-react';
+import { Plus, Truck, Search, Phone, MapPin, DollarSign, Briefcase, Trash2, History, X, CheckCircle, ArrowRight, Download } from 'lucide-react';
 import Modal from '../components/Modal';
 import { getLocalDateString, formatDate } from '../utils/dateUtils';
+import { jsPDF } from 'jspdf';
 
 const Suppliers = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -93,6 +94,186 @@ const Suppliers = () => {
         } catch (err) {
             alert(err.message);
         }
+    };
+
+    const downloadFrontendPDF = () => {
+        if (!selectedSupplier) return;
+
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Colors
+        const primary = [30, 58, 95];
+        const textDark = [15, 23, 42];
+        const textMuted = [100, 116, 139];
+        const borderCol = [226, 232, 240];
+
+        const startX = 15;
+        const pageW = 210;
+        const usableW = pageW - (startX * 2);
+
+        // Header Banner
+        doc.setFillColor(...primary);
+        doc.rect(0, 0, pageW, 42, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text('GUDDU TRADERS', pageW / 2, 16, { align: 'center' });
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text('SUPPLIER ACCOUNT STATEMENT', pageW / 2, 24, { align: 'center' });
+
+        doc.setFontSize(8);
+        doc.setTextColor(147, 197, 253);
+        doc.text(`Generated: ${new Date().toLocaleString('en-PK')}`, pageW / 2, 34, { align: 'center' });
+
+        // Supplier Info Card
+        let currentY = 50;
+        doc.setFillColor(248, 250, 252);
+        doc.rect(startX, currentY, usableW, 25, 'F');
+        doc.setDrawColor(...borderCol);
+        doc.rect(startX, currentY, usableW, 25, 'S');
+
+        doc.setTextColor(...textDark);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(selectedSupplier.name, startX + 5, currentY + 6);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...textMuted);
+        doc.text(`Phone: ${selectedSupplier.phone || '—'}`, startX + 5, currentY + 13);
+        doc.text(`Address: ${selectedSupplier.address || '—'}`, startX + 5, currentY + 19);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38);
+        doc.text(`Outstanding Payable: PKR ${selectedSupplier.outstandingPayable.toLocaleString()}`, startX + usableW - 5, currentY + 10, { align: 'right' });
+
+        // Column positions
+        const colPos = {
+            no:   startX + 2,
+            date: startX + 8,
+            type: startX + 32,
+            desc: startX + 52,
+            bill: startX + 124,
+            pay:  startX + 154,
+            bal:  startX + usableW - 2
+        };
+
+        const drawTableHeader = (y) => {
+            doc.setFillColor(...primary);
+            doc.rect(startX, y, usableW, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.text('#',            colPos.no,   y + 5.5);
+            doc.text('DATE',         colPos.date,  y + 5.5);
+            doc.text('TYPE',         colPos.type,  y + 5.5);
+            doc.text('DESCRIPTION',  colPos.desc,  y + 5.5);
+            doc.text('PURCHASE (CR)', colPos.bill, y + 5.5, { align: 'right' });
+            doc.text('PAID (DR)',     colPos.pay,  y + 5.5, { align: 'right' });
+            doc.text('BALANCE',      colPos.bal,  y + 5.5, { align: 'right' });
+        };
+
+        currentY = 82;
+        drawTableHeader(currentY);
+        currentY += 8;
+
+        let rowNo = 0;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+
+        // Sort ascending for chronological PDF
+        const sortedLedger = [...ledger].sort((a, b) => {
+            const dateDiff = new Date(a.date) - new Date(b.date);
+            if (dateDiff !== 0) return dateDiff;
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        });
+
+        // Back-calculate the starting balance
+        const totalDebits  = sortedLedger.reduce((sum, e) => sum + (e.debit  || 0), 0);
+        const totalCredits = sortedLedger.reduce((sum, e) => sum + (e.credit || 0), 0);
+        // For supplier: credit = purchase (increases payable), debit = payment (decreases payable)
+        let runningBal = (selectedSupplier?.outstandingPayable || 0) + totalDebits - totalCredits;
+
+        const computedLedger = sortedLedger.map(entry => {
+            runningBal = runningBal - (entry.debit || 0) + (entry.credit || 0);
+            return { ...entry, balance: runningBal };
+        });
+
+        computedLedger.forEach(entry => {
+            rowNo++;
+
+            if (currentY > 270) {
+                doc.addPage();
+                currentY = 20;
+                drawTableHeader(currentY);
+                currentY += 8;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+            }
+
+            if (rowNo % 2 === 0) {
+                doc.setFillColor(248, 250, 252);
+                doc.rect(startX, currentY, usableW, 8, 'F');
+            }
+
+            doc.setTextColor(...textDark);
+            doc.text(String(rowNo), colPos.no, currentY + 5.5);
+            doc.text(formatDate(entry.date), colPos.date, currentY + 5.5);
+            doc.text(entry.transactionType.toUpperCase(), colPos.type, currentY + 5.5);
+
+            const desc = (entry.description || '—').substring(0, 48);
+            doc.text(desc, colPos.desc, currentY + 5.5);
+
+            // For supplier: credit = purchase amount, debit = payment
+            if (entry.credit > 0) {
+                doc.text(entry.credit.toLocaleString(), colPos.bill, currentY + 5.5, { align: 'right' });
+            } else {
+                doc.text('—', colPos.bill - 2, currentY + 5.5, { align: 'right' });
+            }
+
+            if (entry.debit > 0) {
+                doc.text(entry.debit.toLocaleString(), colPos.pay, currentY + 5.5, { align: 'right' });
+            } else {
+                doc.text('—', colPos.pay - 2, currentY + 5.5, { align: 'right' });
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(entry.balance.toLocaleString(), colPos.bal, currentY + 5.5, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+
+            doc.setDrawColor(241, 245, 249);
+            doc.line(startX, currentY + 8, startX + usableW, currentY + 8);
+
+            currentY += 8;
+        });
+
+        // Summary footer
+        if (currentY > 250) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        currentY += 5;
+        doc.setFillColor(...primary);
+        doc.rect(startX, currentY, usableW, 20, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('FINAL ACCOUNT BALANCE SUMMARY', startX + 5, currentY + 7);
+
+        doc.setFontSize(11);
+        doc.setTextColor(234, 179, 8);
+        doc.text(`PKR ${selectedSupplier.outstandingPayable.toLocaleString()}`, startX + usableW - 5, currentY + 12, { align: 'right' });
+
+        doc.save(`${selectedSupplier.name.replace(/\s+/g, '_')}_Supplier_Statement.pdf`);
     };
 
     const filtered = suppliers.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -226,7 +407,15 @@ const Suppliers = () => {
                             </p>
                         </div>
                     </div>
-                    <button onClick={() => setShowLedgerModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '12px', borderRadius: '12px', cursor: 'pointer' }}><X size={24} /></button>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <button
+                            onClick={downloadFrontendPDF}
+                            style={{ padding: '10px 16px', backgroundColor: '#e2e8f0', color: '#1e293b', fontWeight: '800', fontSize: '0.85rem', borderRadius: '12px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                        >
+                            <Download size={16} /> PDF Statement
+                        </button>
+                        <button onClick={() => setShowLedgerModal(false)} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '12px', borderRadius: '12px', cursor: 'pointer' }}><X size={24} /></button>
+                    </div>
                 </div>
 
                 <div className="ledger-container" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', flex: 1, overflow: 'hidden' }}>
@@ -249,39 +438,60 @@ const Suppliers = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {ledger.map((entry, idx) => (
-                                        <tr key={idx}>
-                                            <td data-label="Date">
-                                                <div style={{ fontWeight: '700' }}>{formatDate(entry.date)}</div>
-                                            </td>
-                                            <td data-label="Type">
-                                                <span style={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '800',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '8px',
-                                                    backgroundColor: entry.transactionType === 'Purchase' ? '#fee2e2' : '#dcfce7',
-                                                    color: entry.transactionType === 'Purchase' ? '#991b1b' : '#166534'
-                                                }}>
-                                                    {entry.transactionType.toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td data-label="Dr" style={{ color: 'var(--success)', fontWeight: '700' }}>{entry.debit > 0 ? `-${entry.debit.toLocaleString()}` : '—'}</td>
-                                            <td data-label="Cr" style={{ color: 'var(--danger)', fontWeight: '700' }}>{entry.credit > 0 ? `+${entry.credit.toLocaleString()}` : '—'}</td>
-                                            <td data-label="Bal" style={{ textAlign: 'right', fontWeight: '900' }}>{entry.balance.toLocaleString()}</td>
-                                            <td data-label="Action" style={{ textAlign: 'right' }}>
-                                                <button 
-                                                    onClick={() => entry.transactionType === 'Purchase' ? handleDeletePurchase(entry.referenceId) : handleDeletePayment(entry.referenceId)}
-                                                    style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
-                                                    title="Delete Transaction"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {(() => {
+                                        // Sort descending (newest first)
+                                        const sorted = [...ledger].sort((a, b) => {
+                                            const dateDiff = new Date(b.date) - new Date(a.date);
+                                            if (dateDiff !== 0) return dateDiff;
+                                            return new Date(b.createdAt) - new Date(a.createdAt);
+                                        });
+
+                                        // Back-calculate running balances from current outstanding payable
+                                        // For supplier: credit=purchase (increases payable), debit=payment (decreases payable)
+                                        let currentBal = selectedSupplier?.outstandingPayable || 0;
+                                        const computed = sorted.map((entry, idx) => {
+                                            if (idx > 0) {
+                                                const prev = sorted[idx - 1];
+                                                // Undo the previous entry's effect to get the balance before it
+                                                currentBal = currentBal + (prev.debit || 0) - (prev.credit || 0);
+                                            }
+                                            return { ...entry, balance: currentBal };
+                                        });
+
+                                        return computed.map((entry, idx) => (
+                                            <tr key={idx}>
+                                                <td data-label="Date">
+                                                    <div style={{ fontWeight: '700' }}>{formatDate(entry.date)}</div>
+                                                </td>
+                                                <td data-label="Type">
+                                                    <span style={{
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '800',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '8px',
+                                                        backgroundColor: entry.transactionType === 'Purchase' ? '#fee2e2' : '#dcfce7',
+                                                        color: entry.transactionType === 'Purchase' ? '#991b1b' : '#166534'
+                                                    }}>
+                                                        {entry.transactionType.toUpperCase()}
+                                                    </span>
+                                                </td>
+                                                <td data-label="Dr" style={{ color: 'var(--success)', fontWeight: '700' }}>{entry.debit > 0 ? `-${entry.debit.toLocaleString()}` : '—'}</td>
+                                                <td data-label="Cr" style={{ color: 'var(--danger)', fontWeight: '700' }}>{entry.credit > 0 ? `+${entry.credit.toLocaleString()}` : '—'}</td>
+                                                <td data-label="Bal" style={{ textAlign: 'right', fontWeight: '900' }}>{entry.balance.toLocaleString()}</td>
+                                                <td data-label="Action" style={{ textAlign: 'right' }}>
+                                                    <button
+                                                        onClick={() => entry.transactionType === 'Purchase' ? handleDeletePurchase(entry.referenceId) : handleDeletePayment(entry.referenceId)}
+                                                        style={{ background: '#fef2f2', color: 'var(--danger)', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+                                                        title="Delete Transaction"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ));
+                                    })()}
                                     {ledger.length === 0 && (
-                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No record found.</td></tr>
+                                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No record found.</td></tr>
                                     )}
                                 </tbody>
                             </table>
