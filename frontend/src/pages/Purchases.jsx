@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import DateFilter from '../components/DateFilter';
-import { Plus, Trash, Save, ShoppingCart, Truck, Edit, Trash2, Calendar, X, ArrowRight, Package, DollarSign } from 'lucide-react';
+import { Plus, Trash, Save, ShoppingCart, Truck, Edit, Trash2, Calendar, X, ArrowRight, Package, DollarSign, Keyboard } from 'lucide-react';
 import { getLocalDateString, formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 import SearchableSelect from '../components/SearchableSelect';
@@ -13,6 +13,9 @@ const Purchases = () => {
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingPurchase, setEditingPurchase] = useState(null);
+
+    const formRef = useRef(null);
+    const paidAmountRef = useRef(null);
 
     const [formData, setFormData] = useState({
         supplier: '',
@@ -32,6 +35,33 @@ const Purchases = () => {
     useEffect(() => {
         fetchInitialData();
     }, []);
+
+    // Global keyboard shortcuts when modal is open
+    useEffect(() => {
+        if (!showModal) return;
+
+        const handleKeyDown = (e) => {
+            // Ctrl+Enter → Submit
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                formRef.current?.requestSubmit();
+            }
+            // Ctrl+N → Add new item row
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                addItem();
+            }
+            // Ctrl+P → Focus paid amount
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                paidAmountRef.current?.focus();
+                paidAmountRef.current?.select();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showModal, formData]);
 
     const fetchPurchases = async () => {
         let url = '/purchases';
@@ -80,10 +110,10 @@ const Purchases = () => {
     };
 
     const addItem = () => {
-        setFormData({
-            ...formData,
-            items: [...formData.items, { product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }]
-        });
+        setFormData(prev => ({
+            ...prev,
+            items: [...prev.items, { product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }]
+        }));
     };
 
     const removeItem = (index) => {
@@ -104,23 +134,60 @@ const Purchases = () => {
         }
 
         newItems[index].totalCost = (newItems[index].quantity || 0) * (newItems[index].costAtPurchase || 0);
-        setFormData({ ...formData, items: newItems });
+
+        const updatedFormData = { ...formData, items: newItems };
+
+        // Auto-add next row when last row gets a product selected
+        if (field === 'product' && value && index === newItems.length - 1) {
+            newItems.push({ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 });
+            updatedFormData.items = newItems;
+        }
+
+        // Auto-fill paid amount for Cash payments
+        if (updatedFormData.paymentType === 'Cash') {
+            const newTotal = newItems.reduce((acc, curr) => acc + (curr.totalCost || 0), 0);
+            updatedFormData.paidAmount = newTotal;
+        }
+
+        setFormData(updatedFormData);
     };
 
     const grandTotal = formData.items.reduce((acc, curr) => acc + curr.totalCost, 0);
 
+    // Auto-fill paid when payment type changes to Cash
+    const handlePaymentTypeChange = (paymentType) => {
+        const newData = { ...formData, paymentType };
+        if (paymentType === 'Cash') {
+            newData.paidAmount = grandTotal;
+        }
+        setFormData(newData);
+    };
+
+    const resetForm = () => {
+        setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Clean up empty trailing rows
+            const cleanItems = formData.items.filter(item => item.product);
+            if (cleanItems.length === 0) {
+                alert('Please add at least one product');
+                return;
+            }
+
+            const submissionData = { ...formData, items: cleanItems, grandTotal };
+
             if (isEditing) {
-                await api.put(`/purchases/${editingPurchase._id}`, { ...formData, grandTotal });
+                await api.put(`/purchases/${editingPurchase._id}`, submissionData);
             } else {
-                await api.post('/purchases', { ...formData, grandTotal });
+                await api.post('/purchases', submissionData);
             }
             setShowModal(false);
             setIsEditing(false);
             setEditingPurchase(null);
-            setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() });
+            resetForm();
             fetchPurchases();
         } catch (err) {
             alert(err.response?.data?.message || err.message);
@@ -144,7 +211,7 @@ const Purchases = () => {
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
                     <button
-                        onClick={() => { setIsEditing(false); setEditingPurchase(null); setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() }); setShowModal(true); }}
+                        onClick={() => { setIsEditing(false); setEditingPurchase(null); resetForm(); setShowModal(true); }}
                         className="primary desktop-only"
                         style={{ padding: '14px 28px', borderRadius: '14px' }}
                     >
@@ -153,7 +220,7 @@ const Purchases = () => {
                 </div>
             </div>
 
-            <button onClick={() => { setIsEditing(false); setEditingPurchase(null); setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() }); setShowModal(true); }} className="fab-button mobile-only" title="New Purchase">
+            <button onClick={() => { setIsEditing(false); setEditingPurchase(null); resetForm(); setShowModal(true); }} className="fab-button mobile-only" title="New Purchase">
                 <Plus size={32} />
             </button>
 
@@ -206,6 +273,16 @@ const Purchases = () => {
             </div>
 
             <Modal isOpen={showModal} onClose={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} maxWidth="900px">
+                {/* Keyboard shortcut bar - desktop only */}
+                <div className="kbd-bar">
+                    <span className="kbd-bar-label"><Keyboard size={14} /> Shortcuts:</span>
+                    <span className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Save</span>
+                    <span className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>N</kbd> Add Row</span>
+                    <span className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>P</kbd> Paid Amount</span>
+                    <span className="kbd-hint"><kbd>Tab</kbd> Next Field</span>
+                    <span className="kbd-hint"><kbd>Esc</kbd> Close</span>
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -216,7 +293,7 @@ const Purchases = () => {
                     <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} style={{ background: '#f1f5f9', color: 'var(--text)', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={18} /></button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form ref={formRef} onSubmit={handleSubmit}>
                     <div className="purchase-meta-grid" style={{ marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
                         <div>
                             <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Date</label>
@@ -235,7 +312,7 @@ const Purchases = () => {
                         <div>
                             <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment</label>
                             <select
-                                value={formData.paymentType} onChange={e => setFormData({ ...formData, paymentType: e.target.value })}
+                                value={formData.paymentType} onChange={e => handlePaymentTypeChange(e.target.value)}
                                 style={{ padding: '10px' }}
                             >
                                 <option value="Cash">Cash</option>
@@ -261,7 +338,7 @@ const Purchases = () => {
                                                 value={item.product}
                                                 onChange={e => handleItemChange(index, 'product', e.target.value)}
                                                 placeholder="Item..."
-                                                required
+                                                required={index === 0 || !!item.product}
                                             />
                                         </div>
                                         <div className="item-unit">
@@ -277,16 +354,18 @@ const Purchases = () => {
                                         <div className="item-qty">
                                             <label>QTY</label>
                                             <input
-                                                type="number" min="1" required
+                                                type="number" min="1" required={!!item.product}
                                                 value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
+                                                onFocus={e => e.target.select()}
                                                 style={{ fontWeight: '800', padding: '10px' }}
                                             />
                                         </div>
                                         <div className="item-rate">
                                             <label>COST RATE</label>
                                             <input
-                                                type="number" required
+                                                type="number" required={!!item.product}
                                                 value={item.costAtPurchase} onChange={e => handleItemChange(index, 'costAtPurchase', parseFloat(e.target.value))}
+                                                onFocus={e => e.target.select()}
                                                 style={{ fontWeight: '800', padding: '10px' }}
                                             />
                                         </div>
@@ -297,12 +376,19 @@ const Purchases = () => {
                                             </div>
                                         </div>
                                         <div className="item-remove">
-                                            <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {formData.items.length > 1 && (
+                                                <button type="button" onClick={() => removeItem(index)} style={{ height: '44px', width: '44px', color: 'var(--danger)', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                             ))}
+                        </div>
+
+                        {/* Auto-add hint */}
+                        <div className="desktop-only" style={{ textAlign: 'center', padding: '8px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '600', opacity: 0.7 }}>
+                            💡 Next row auto-adds when you select a product in the last row
                         </div>
                     </div>
 
@@ -313,14 +399,22 @@ const Purchases = () => {
                                 <div className="paid-amount-input">
                                     <label>PAID:</label>
                                     <input
+                                        ref={paidAmountRef}
                                         type="number" 
                                         value={formData.paidAmount} onChange={e => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })}
+                                        onFocus={e => e.target.select()}
                                     />
                                 </div>
                             </div>
+                            {grandTotal - formData.paidAmount > 0 && (
+                                <div style={{ textAlign: 'right', fontSize: '0.85rem', fontWeight: '800', color: 'var(--danger)' }}>
+                                    Balance Due: PKR {(grandTotal - formData.paidAmount).toLocaleString()}
+                                </div>
+                            )}
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <button type="submit" className="primary" style={{ flex: 2, padding: '14px', fontSize: '1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', gap: '8px' }}>
                                     <Save size={20} /> {isEditing ? 'Update' : 'Confirm'}
+                                    <span className="desktop-only" style={{ fontSize: '0.75rem', opacity: 0.8, marginLeft: '8px' }}>(Ctrl+Enter)</span>
                                 </button>
                                 <button type="button" onClick={() => { setShowModal(false); setIsEditing(false); setEditingPurchase(null); }} style={{ flex: 1, backgroundColor: '#f1f5f9', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '0.9rem', cursor: 'pointer' }}>Cancel</button>
                             </div>
@@ -426,4 +520,3 @@ const Purchases = () => {
 };
 
 export default Purchases;
-

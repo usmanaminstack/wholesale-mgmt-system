@@ -640,6 +640,106 @@ label {
   padding-top: 20px;
 }
 
+/* ===== Keyboard Shortcut Hints ===== */
+.kbd-bar {
+  display: none;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+  border-radius: 10px;
+  border: 1px solid #e0f2fe;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 769px) {
+  .kbd-bar { display: flex; }
+}
+
+.kbd-bar-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kbd-hint kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--text);
+  background: white;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  line-height: 1.4;
+}
+
+/* ===== Focus Visible Improvements ===== */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ===== Quick-Pick Chips ===== */
+.quick-pick-chips {
+  display: none;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 769px) {
+  .quick-pick-chips { display: flex; }
+}
+
+.quick-chip {
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  border: 1.5px solid var(--border) !important;
+  background: white !important;
+  color: var(--text) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  min-height: unset !important;
+}
+
+.quick-chip:hover {
+  border-color: var(--primary) !important;
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+
+.quick-chip.active {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  color: white !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }

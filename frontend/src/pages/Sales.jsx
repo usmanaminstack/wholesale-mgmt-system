@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import DateFilter from '../components/DateFilter';
-import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download, Share2, CheckCircle2, Search } from 'lucide-react';
+import { Plus, Trash, Save, ShoppingBag, User, Eye, Edit, Printer, X, Trash2, Download, Share2, CheckCircle2, Search, Keyboard } from 'lucide-react';
 import { getLocalDateString, formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 import SearchableSelect from '../components/SearchableSelect';
@@ -21,6 +21,11 @@ const Sales = () => {
     const [showOutOfStock, setShowOutOfStock] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [lastCreatedInvoice, setLastCreatedInvoice] = useState(null);
+    const [recentCustomerIds, setRecentCustomerIds] = useState([]);
+
+    const formRef = useRef(null);
+    const receivedAmountRef = useRef(null);
+    const discountRef = useRef(null);
 
     const [formData, setFormData] = useState({
         customer: '',
@@ -46,7 +51,39 @@ const Sales = () => {
 
     useEffect(() => {
         fetchInitialData();
+        // Load recent customer IDs from localStorage
+        try {
+            const saved = JSON.parse(localStorage.getItem('recentCustomerIds') || '[]');
+            setRecentCustomerIds(saved);
+        } catch (e) {}
     }, []);
+
+    // Global keyboard shortcuts when modal is open
+    useEffect(() => {
+        if (!showModal) return;
+
+        const handleKeyDown = (e) => {
+            // Ctrl+Enter → Submit
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                formRef.current?.requestSubmit();
+            }
+            // Ctrl+N → Add new item row
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                addItem();
+            }
+            // Ctrl+D → Focus discount field
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                discountRef.current?.focus();
+                discountRef.current?.select();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showModal, formData]);
 
     const fetchSales = async () => {
         let url = '/sales';
@@ -66,11 +103,19 @@ const Sales = () => {
         setProducts(pData.data);
     };
 
+    // Save customer to recent list
+    const saveRecentCustomer = (customerId) => {
+        if (!customerId) return;
+        const updated = [customerId, ...recentCustomerIds.filter(id => id !== customerId)].slice(0, 5);
+        setRecentCustomerIds(updated);
+        localStorage.setItem('recentCustomerIds', JSON.stringify(updated));
+    };
+
     const addItem = () => {
-        setFormData({
-            ...formData,
-            items: [...formData.items, { product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
-        });
+        setFormData(prev => ({
+            ...prev,
+            items: [...prev.items, { product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
+        }));
     };
 
     const removeItem = (index) => {
@@ -91,10 +136,42 @@ const Sales = () => {
             newItems[index].totalPrice = newItems[index].quantity * (newItems[index].priceAtSale || 0);
         }
 
-        setFormData({ ...formData, items: newItems });
+        const updatedFormData = { ...formData, items: newItems };
+
+        // Auto-add next row when last row gets a product selected
+        if (field === 'product' && value && index === newItems.length - 1) {
+            newItems.push({ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 });
+            updatedFormData.items = newItems;
+        }
+
+        // Auto-fill received amount for Cash payments
+        if (updatedFormData.paymentType === 'Cash') {
+            const newTotal = newItems.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+            updatedFormData.receivedAmount = newTotal - (updatedFormData.discount || 0);
+        }
+
+        setFormData(updatedFormData);
     };
 
     const totalAmount = formData.items.reduce((acc, curr) => acc + curr.totalPrice, 0);
+
+    // Auto-fill received when payment type changes to Cash
+    const handlePaymentTypeChange = (paymentType) => {
+        const newData = { ...formData, paymentType };
+        if (paymentType === 'Cash') {
+            newData.receivedAmount = totalAmount - (formData.discount || 0);
+        }
+        setFormData(newData);
+    };
+
+    // Auto-fill received when discount changes (for Cash)
+    const handleDiscountChange = (discount) => {
+        const newData = { ...formData, discount };
+        if (formData.paymentType === 'Cash') {
+            newData.receivedAmount = totalAmount - discount;
+        }
+        setFormData(newData);
+    };
 
     const handleEditClick = (sale) => {
         setIsEditing(true);
@@ -122,11 +199,23 @@ const Sales = () => {
         setShowModal(true);
     };
 
+    const resetForm = () => {
+        setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Clean up empty trailing rows
+            const cleanItems = formData.items.filter(item => item.product);
+            if (cleanItems.length === 0) {
+                toast.error('Please add at least one product');
+                return;
+            }
+
             const submissionData = {
                 ...formData,
+                items: cleanItems,
                 customer: formData.customer === '' ? null : formData.customer,
                 totalAmount
             };
@@ -138,6 +227,11 @@ const Sales = () => {
                 response = await api.post('/sales', submissionData);
             }
 
+            // Save to recent customers
+            if (formData.customer) {
+                saveRecentCustomer(formData.customer);
+            }
+
             if (!isEditing) {
                 setLastCreatedInvoice(response.data.sale || response.data);
                 setShowSuccessModal(true);
@@ -146,7 +240,7 @@ const Sales = () => {
             setShowModal(false);
             setIsEditing(false);
             setSelectedSale(null);
-            setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
+            resetForm();
             fetchSales();
         } catch (err) {
             console.error(err);
@@ -281,6 +375,12 @@ const Sales = () => {
         }, 800);
     };
 
+    // Recent customers as quick-pick chips
+    const recentCustomers = recentCustomerIds
+        .map(id => customers.find(c => c._id === id))
+        .filter(Boolean)
+        .slice(0, 5);
+
 
     return (
         <div className="animate-in">
@@ -297,13 +397,13 @@ const Sales = () => {
                         setEndDate={setEndDate}
                         onClear={() => { setStartDate(''); setEndDate(''); }}
                     />
-                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] }); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                    <button onClick={() => { setIsEditing(false); setSelectedSale(null); resetForm(); setShowModal(true); }} className="primary desktop-only" style={{ padding: '14px 28px', borderRadius: '14px' }}>
                         <Plus size={20} /> New Sale
                     </button>
                 </div>
             </div>
 
-            <button data-testid="new-sale-fab" onClick={() => { setIsEditing(false); setSelectedSale(null); setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] }); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
+            <button data-testid="new-sale-fab" onClick={() => { setIsEditing(false); setSelectedSale(null); resetForm(); setShowModal(true); }} className="fab-button mobile-only" title="New Sale">
                 <Plus size={32} />
             </button>
 
@@ -369,7 +469,17 @@ const Sales = () => {
             </div>
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} maxWidth="1000px">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                {/* Keyboard shortcut bar - desktop only */}
+                <div className="kbd-bar">
+                    <span className="kbd-bar-label"><Keyboard size={14} /> Shortcuts:</span>
+                    <span className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Save</span>
+                    <span className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>N</kbd> Add Row</span>
+                    <span className="kbd-hint"><kbd>Ctrl</kbd>+<kbd>D</kbd> Discount</span>
+                    <span className="kbd-hint"><kbd>Tab</kbd> Next Field</span>
+                    <span className="kbd-hint"><kbd>Esc</kbd> Close</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <h2 style={{ margin: 0, fontWeight: '800' }}>{isEditing ? 'Update Sale' : 'New Sale'}</h2>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: '600' }} className="desktop-only">
@@ -380,12 +490,38 @@ const Sales = () => {
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form ref={formRef} onSubmit={handleSubmit}>
                     <div className="sales-meta-section" style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', marginBottom: '32px' }}>
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                             <button type="button" onClick={() => setFormData({ ...formData, isRetail: true })} style={{ flex: 1, backgroundColor: formData.isRetail ? 'var(--primary)' : 'white', color: formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Retail Sale</button>
                             <button type="button" onClick={() => setFormData({ ...formData, isRetail: false })} style={{ flex: 1, backgroundColor: !formData.isRetail ? 'var(--primary)' : 'white', color: !formData.isRetail ? 'white' : 'var(--text)', border: '1px solid var(--border)', padding: '12px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>Wholesale Sale</button>
                         </div>
+
+                        {/* Quick-pick recent customers - desktop only */}
+                        {recentCustomers.length > 0 && !isEditing && (
+                            <div className="quick-pick-chips">
+                                <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', alignSelf: 'center', marginRight: '4px' }}>Recent:</span>
+                                {recentCustomers.map(c => (
+                                    <button
+                                        key={c._id}
+                                        type="button"
+                                        className={`quick-chip ${formData.customer === c._id ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setFormData({
+                                                ...formData,
+                                                customer: c._id,
+                                                customerName: c.name,
+                                                previousBalance: c.outstandingReceivable || 0,
+                                                phone: c.phone || formData.phone,
+                                                address: c.address || formData.address
+                                            });
+                                        }}
+                                    >
+                                        {c.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="sales-meta-grid">
                             <div>
@@ -421,7 +557,7 @@ const Sales = () => {
                             )}
                             <div>
                                 <label>Payment Method</label>
-                                <select value={formData.paymentType} onChange={e => setFormData({ ...formData, paymentType: e.target.value })} >
+                                <select value={formData.paymentType} onChange={e => handlePaymentTypeChange(e.target.value)} >
                                     <option value="Cash">Cash Payment</option>
                                     <option value="Credit">Credit (Balance)</option>
                                 </select>
@@ -454,7 +590,7 @@ const Sales = () => {
                                             value={item.product}
                                             onChange={e => handleItemChange(index, 'product', e.target.value)}
                                             placeholder="-- Choose Product --"
-                                            required
+                                            required={index === 0 || item.product}
                                         />
                                     </div>
                                     <div className="inv-unit">
@@ -466,21 +602,41 @@ const Sales = () => {
                                     </div>
                                     <div className="inv-qty">
                                         <label>Qty</label>
-                                        <input type="number" min="1" required value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))} />
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            required={!!item.product}
+                                            value={item.quantity}
+                                            onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
+                                            onFocus={e => e.target.select()}
+                                        />
                                     </div>
                                     <div className="inv-price">
                                         <label>Price</label>
-                                        <input type="number" required value={item.priceAtSale} onChange={e => handleItemChange(index, 'priceAtSale', parseFloat(e.target.value))} />
+                                        <input
+                                            type="number"
+                                            required={!!item.product}
+                                            value={item.priceAtSale}
+                                            onChange={e => handleItemChange(index, 'priceAtSale', parseFloat(e.target.value))}
+                                            onFocus={e => e.target.select()}
+                                        />
                                     </div>
                                     <div className="inv-total">
                                         <label>Subtotal</label>
                                         <div className="subtotal-display">{item.totalPrice?.toLocaleString()}</div>
                                     </div>
                                     <div className="inv-remove">
-                                        <button type="button" onClick={() => removeItem(index)}><Trash2 size={20} /></button>
+                                        {formData.items.length > 1 && (
+                                            <button type="button" onClick={() => removeItem(index)}><Trash2 size={20} /></button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Auto-add hint */}
+                        <div className="desktop-only" style={{ textAlign: 'center', padding: '8px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '600', opacity: 0.7 }}>
+                            💡 Next row auto-adds when you select a product in the last row
                         </div>
                     </div>
 
@@ -497,6 +653,7 @@ const Sales = () => {
                                     <input
                                         type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
                                         value={formData.previousBalance} onChange={e => setFormData({ ...formData, previousBalance: parseFloat(e.target.value) || 0 })}
+                                        onFocus={e => e.target.select()}
                                     />
                                 </div>
                                 <div className="summary-row">
@@ -506,8 +663,10 @@ const Sales = () => {
                                 <div className="summary-row">
                                     <span>Discount:</span>
                                     <input
+                                        ref={discountRef}
                                         type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right', color: 'var(--accent)' }}
-                                        value={formData.discount} onChange={e => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                                        value={formData.discount} onChange={e => handleDiscountChange(parseFloat(e.target.value) || 0)}
+                                        onFocus={e => e.target.select()}
                                     />
                                 </div>
                                 <div className="summary-row net-total-box">
@@ -517,8 +676,10 @@ const Sales = () => {
                                 <div className="summary-row">
                                     <span>Amount Received:</span>
                                     <input
+                                        ref={receivedAmountRef}
                                         type="number" style={{ width: '120px', fontWeight: '800', textAlign: 'right' }}
                                         value={formData.receivedAmount} onChange={e => setFormData({ ...formData, receivedAmount: parseFloat(e.target.value) || 0 })}
+                                        onFocus={e => e.target.select()}
                                     />
                                 </div>
                                 <div className="summary-row invoice-due-row">
@@ -532,6 +693,7 @@ const Sales = () => {
                                 <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
                                     <button type="submit" className="primary" style={{ flex: 2, padding: '16px', fontSize: '1.1rem', borderRadius: '16px', border: 'none', cursor: 'pointer' }}>
                                         <Save size={22} /> {isEditing ? 'Update Invoice' : 'Create Invoice'}
+                                        <span className="desktop-only" style={{ fontSize: '0.75rem', opacity: 0.8, marginLeft: '8px' }}>(Ctrl+Enter)</span>
                                     </button>
                                     <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', border: 'none', borderRadius: '16px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
                                 </div>
@@ -827,4 +989,3 @@ const Sales = () => {
 };
 
 export default Sales;
-
