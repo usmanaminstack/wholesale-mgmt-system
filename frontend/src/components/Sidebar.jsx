@@ -12,7 +12,8 @@ import {
   X,
   Menu,
   Droplets,
-  BookOpen
+  BookOpen,
+  ListPlus
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import logo from '../assets/logo.png';
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/customers', name: 'Customers', icon: Users },
   { path: '/suppliers', name: 'Suppliers', icon: Truck },
   { path: '/payments', name: 'Payments', icon: CreditCard },
+  { path: '/bulk-payments', name: 'Bulk Entry', icon: ListPlus },
   { path: '/expenses', name: 'Expenses', icon: Receipt },
   { path: '/reports', name: 'Reports', icon: BarChart3 },
   { path: '/daily-ledger', name: 'Daily Ledger', icon: BookOpen },

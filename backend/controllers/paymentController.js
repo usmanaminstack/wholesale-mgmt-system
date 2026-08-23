@@ -109,3 +109,81 @@ exports.deletePayment = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.createBulkPayments = async (req, res) => {
+    try {
+        const { payments } = req.body;
+        if (!payments || !Array.isArray(payments)) {
+            return res.status(400).json({ message: 'payments array is required' });
+        }
+
+        const results = [];
+        for (const payData of payments) {
+            const { entityType, entityId, amount, paymentDate, paymentMethod, note } = payData;
+            try {
+                if (!entityType || !entityId || !amount) {
+                    throw new Error('entityType, entityId, and amount are required');
+                }
+
+                const payment = new Payment({
+                    entityType,
+                    entityId,
+                    amount,
+                    paymentDate,
+                    paymentMethod,
+                    note
+                });
+
+                const savedPayment = await payment.save();
+
+                if (entityType === 'Customer') {
+                    const customer = await Customer.findById(entityId);
+                    if (customer) {
+                        customer.totalReceived += amount;
+                        customer.outstandingReceivable -= amount;
+                        await customer.save();
+
+                        await addLedgerEntry({
+                            entityType: 'Customer',
+                            entityId,
+                            transactionType: 'Payment',
+                            referenceId: savedPayment._id,
+                            credit: amount,
+                            description: note || 'Customer Payment (Bulk)',
+                            date: paymentDate
+                        });
+                    } else {
+                        throw new Error(`Customer with ID ${entityId} not found`);
+                    }
+                } else if (entityType === 'Supplier') {
+                    const supplier = await Supplier.findById(entityId);
+                    if (supplier) {
+                        supplier.totalPaid += amount;
+                        supplier.outstandingPayable -= amount;
+                        await supplier.save();
+
+                        await addLedgerEntry({
+                            entityType: 'Supplier',
+                            entityId,
+                            transactionType: 'Payment',
+                            referenceId: savedPayment._id,
+                            debit: amount,
+                            description: note || 'Supplier Payment (Bulk)',
+                            date: paymentDate
+                        });
+                    } else {
+                        throw new Error(`Supplier with ID ${entityId} not found`);
+                    }
+                }
+
+                results.push({ status: 'success', payment: savedPayment });
+            } catch (err) {
+                results.push({ status: 'error', message: err.message, input: payData });
+            }
+        }
+
+        res.status(201).json({ results });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

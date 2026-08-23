@@ -14,6 +14,7 @@ import Payments from './pages/Payments';
 import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import DailyLedger from './pages/DailyLedger';
+import BulkPayments from './pages/BulkPayments';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
               <Route path="customers" element={<Customers />} />
               <Route path="suppliers" element={<Suppliers />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="bulk-payments" element={<BulkPayments />} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="reports" element={<Reports />} />
               <Route path="daily-ledger" element={<DailyLedger />} />
