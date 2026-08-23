@@ -71,7 +71,7 @@ const BulkSales = () => {
         const sampleProd1 = products[0];
         const sampleProd2 = products[1];
 
-        // Sheet 1: Template data (Supports both ID or Name)
+        // Sheet 1: Template data (Supports ID or Name)
         const templateData = [
             {
                 "Bill No / Invoice No": "BILL-101",
@@ -80,10 +80,10 @@ const BulkSales = () => {
                 "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 10,
-                "Price Per Unit": 1250,
+                "Price Per Unit": sampleProd1?.pricePerCarton || 1250,
                 "Discount": 0,
                 "Payment Type (Cash/Credit)": "Cash",
-                "Received Amount": 12500,
+                "Received Amount": (sampleProd1?.pricePerCarton || 1250) * 10,
                 "Note": "Order Morning"
             },
             {
@@ -93,10 +93,10 @@ const BulkSales = () => {
                 "Product ID or Name": sampleProd2?._id || sampleProd2?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 5,
-                "Price Per Unit": 1500,
+                "Price Per Unit": sampleProd2?.pricePerCarton || 1500,
                 "Discount": 0,
                 "Payment Type (Cash/Credit)": "Cash",
-                "Received Amount": 7500,
+                "Received Amount": (sampleProd2?.pricePerCarton || 1500) * 5,
                 "Note": "Order Morning"
             },
             {
@@ -106,10 +106,10 @@ const BulkSales = () => {
                 "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Piece",
                 "Quantity": 12,
-                "Price Per Unit": 110,
+                "Price Per Unit": sampleProd1?.pricePerPiece || 110,
                 "Discount": 20,
                 "Payment Type (Cash/Credit)": "Cash",
-                "Received Amount": 1300,
+                "Received Amount": ((sampleProd1?.pricePerPiece || 110) * 12) - 20,
                 "Note": "Evening Separate Bill"
             }
         ];
@@ -166,13 +166,35 @@ const BulkSales = () => {
                 }
 
                 const groupedBillsMap = new Map();
+                let notFoundProducts = 0;
+                let notFoundCustomers = 0;
 
                 data.forEach((row, index) => {
-                    const billNoRaw = String(row["Bill No / Invoice No"] || row["Bill No"] || row["Invoice No"] || row["Invoice #"] || row["Bill #"] || "").trim();
-                    const custIdentifier = String(row["Customer ID or Name"] || row["Customer ID"] || row["Customer Name"] || row["Customer"] || row["CustomerName"] || "").trim();
-                    const dateRaw = row["Sale Date (YYYY-MM-DD)"] || row["Sale Date"] || row["Date"] || globalDate;
-                    const payTypeRaw = row["Payment Type (Cash/Credit)"] || row["Payment Type"] || row["PaymentType"] || "Cash";
-                    const noteRaw = row["Note"] || row["Reference"] || (billNoRaw ? `Bill #${billNoRaw}` : "");
+                    const billNoRaw = String(
+                        row["Bill No / Invoice No"] ??
+                        row["Bill No"] ??
+                        row["Invoice No"] ??
+                        row["Invoice #"] ??
+                        row["Bill #"] ??
+                        ""
+                    ).trim();
+
+                    const custIdentifier = String(
+                        row["Customer ID or Name"] ??
+                        row["Customer ID"] ??
+                        row["CustomerID"] ??
+                        row["Client ID"] ??
+                        row["Customer Name"] ??
+                        row["Customer"] ??
+                        row["CustomerName"] ??
+                        row["Party Name"] ??
+                        row["Party"] ??
+                        ""
+                    ).trim();
+
+                    const dateRaw = row["Sale Date (YYYY-MM-DD)"] ?? row["Sale Date"] ?? row["Date"] ?? globalDate;
+                    const payTypeRaw = row["Payment Type (Cash/Credit)"] ?? row["Payment Type"] ?? row["PaymentType"] ?? "Cash";
+                    const noteRaw = row["Note"] ?? row["Reference"] ?? (billNoRaw ? `Bill #${billNoRaw}` : "");
 
                     // Normalize date
                     let saleDate = globalDate;
@@ -187,35 +209,61 @@ const BulkSales = () => {
 
                     const paymentType = String(payTypeRaw).toLowerCase().includes('credit') ? 'Credit' : 'Cash';
 
-                    // Match customer by ID OR Name OR Phone
+                    // Match customer by ID (case-insensitive) OR Name OR Phone
+                    const cleanCustId = custIdentifier.toLowerCase();
                     const matchedCustomer = customers.find(c => 
-                        String(c._id).trim() === custIdentifier ||
-                        c.name.toLowerCase().trim() === custIdentifier.toLowerCase() ||
+                        String(c._id).toLowerCase().trim() === cleanCustId ||
+                        c.name.toLowerCase().trim() === cleanCustId ||
                         (c.phone && String(c.phone).trim() === custIdentifier)
                     );
+
+                    if (custIdentifier && custIdentifier.toLowerCase() !== 'walk-in customer' && !matchedCustomer) {
+                        notFoundCustomers++;
+                    }
+
                     const customerId = matchedCustomer ? matchedCustomer._id : '';
 
-                    // Group Key
+                    // Group Key: Group by Bill No if provided, else keep as individual distinct bill
                     const groupKey = billNoRaw ? `${customerId}_${saleDate}_${paymentType}_${billNoRaw}` : `distinct_bill_${index}`;
 
-                    // Product matching by ID OR Name OR customerProductName
-                    const prodIdentifier = String(row["Product ID or Name"] || row["Product ID"] || row["Product Name"] || row["Product"] || row["ProductName"] || "").trim();
+                    // Product matching by ID (case-insensitive) OR Name OR customerProductName
+                    const prodIdentifier = String(
+                        row["Product ID or Name"] ??
+                        row["Product ID"] ??
+                        row["ProductID"] ??
+                        row["Item ID"] ??
+                        row["ItemID"] ??
+                        row["Product Code"] ??
+                        row["Code"] ??
+                        row["Product Name"] ??
+                        row["Product"] ??
+                        row["ProductName"] ??
+                        row["Item"] ??
+                        ""
+                    ).trim();
+
+                    const cleanProdId = prodIdentifier.toLowerCase();
                     const matchedProduct = products.find(p => 
-                        String(p._id).trim() === prodIdentifier ||
-                        p.name.toLowerCase().trim() === prodIdentifier.toLowerCase() ||
-                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === prodIdentifier.toLowerCase())
+                        String(p._id).toLowerCase().trim() === cleanProdId ||
+                        p.name.toLowerCase().trim() === cleanProdId ||
+                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === cleanProdId)
                     );
 
-                    const unitRaw = String(row["Unit (Carton/Piece)"] || row["Unit"] || "Carton").toLowerCase().includes('piece') ? 'Piece' : 'Carton';
-                    const qtyRaw = parseFloat(row["Quantity"] || row["Qty"] || 1) || 1;
+                    if (prodIdentifier && !matchedProduct) {
+                        notFoundProducts++;
+                    }
 
-                    let priceRaw = parseFloat(row["Price Per Unit"] || row["Price"] || row["Rate"]);
-                    if (isNaN(priceRaw) && matchedProduct) {
-                        priceRaw = unitRaw === 'Carton' ? matchedProduct.pricePerCarton : matchedProduct.pricePerPiece;
+                    const unitRaw = String(row["Unit (Carton/Piece)"] ?? row["Unit"] ?? "Carton").toLowerCase().includes('piece') ? 'Piece' : 'Carton';
+                    const qtyRaw = parseFloat(row["Quantity"] ?? row["Qty"] ?? 1) || 1;
+
+                    // Automatically fill Sale Price from matched product if blank or not in file
+                    let priceRaw = parseFloat(row["Price Per Unit"] ?? row["Price"] ?? row["Rate"]);
+                    if ((isNaN(priceRaw) || priceRaw <= 0) && matchedProduct) {
+                        priceRaw = unitRaw === 'Carton' ? (matchedProduct.pricePerCarton || 0) : (matchedProduct.pricePerPiece || 0);
                     }
                     if (isNaN(priceRaw)) priceRaw = 0;
 
-                    const discRaw = parseFloat(row["Discount"] || 0) || 0;
+                    const discRaw = parseFloat(row["Discount"] ?? 0) || 0;
                     const itemTotal = qtyRaw * priceRaw;
 
                     const itemObj = {
@@ -228,7 +276,7 @@ const BulkSales = () => {
                     };
 
                     if (!groupedBillsMap.has(groupKey)) {
-                        const recRaw = parseFloat(row["Received Amount"] || row["Received"] || row["ReceivedAmount"]);
+                        const recRaw = parseFloat(row["Received Amount"] ?? row["Received"] ?? row["ReceivedAmount"]);
                         groupedBillsMap.set(groupKey, {
                             id: Date.now() + Math.random() + index * 100,
                             customer: customerId,
@@ -257,6 +305,14 @@ const BulkSales = () => {
                 if (parsedBills.length > 0) {
                     setBills(parsedBills);
                     toast.success(`Successfully loaded ${parsedBills.length} sales bills from file!`);
+
+                    if (notFoundProducts > 0 || notFoundCustomers > 0) {
+                        toast((t) => (
+                            <span>
+                                ⚠️ Note: {notFoundProducts > 0 ? `${notFoundProducts} product IDs` : ''} {notFoundCustomers > 0 ? `${notFoundCustomers} customer IDs` : ''} not found in database. Please check dropdowns.
+                            </span>
+                        ), { duration: 6000 });
+                    }
                 }
             } catch (err) {
                 console.error("Excel parse error:", err);
@@ -357,7 +413,7 @@ const BulkSales = () => {
                     const prod = products.find(p => p._id === prodId);
                     if (prod) {
                         const targetUnit = field === 'unit' ? value : item.unit;
-                        updatedItem.priceAtSale = targetUnit === 'Carton' ? prod.pricePerCarton : prod.pricePerPiece;
+                        updatedItem.priceAtSale = targetUnit === 'Carton' ? (prod.pricePerCarton || 0) : (prod.pricePerPiece || 0);
                     }
                 }
 
@@ -508,7 +564,7 @@ const BulkSales = () => {
                         Bulk Sales (Multi-Bill Entry)
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
-                        Create and record multiple complete customer invoices or upload from Excel (supports Customer/Product IDs and Names).
+                        Create and record multiple complete customer invoices or upload from Excel (supports Customer/Product IDs and Names with auto-filling).
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
