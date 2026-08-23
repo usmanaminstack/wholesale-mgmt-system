@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import { getLocalDateString } from '../utils/dateUtils';
-import { Plus, Trash2, Save, RotateCcw, CheckCircle2, XCircle, AlertCircle, ShoppingBag, Calendar, CreditCard, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Save, RotateCcw, CheckCircle2, XCircle, AlertCircle, ShoppingBag, Calendar, CreditCard, Download, Upload } from 'lucide-react';
 import SearchableSelect from '../components/SearchableSelect';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 
 const BulkPurchases = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -11,6 +12,7 @@ const BulkPurchases = () => {
     const [globalDate, setGlobalDate] = useState(getLocalDateString());
     const [globalPaymentType, setGlobalPaymentType] = useState('Cash');
     const [submitting, setSubmitting] = useState(false);
+    const fileInputRef = useRef(null);
 
     const createEmptyBill = () => ({
         id: Date.now() + Math.random(),
@@ -58,6 +60,162 @@ const BulkPurchases = () => {
         const paid = parseFloat(bill.paidAmount) || 0;
         const balance = grandTotal - paid;
         return { grandTotal, paid, balance };
+    };
+
+    // Download Sample Excel Template
+    const handleDownloadTemplate = () => {
+        const sampleSupplier = suppliers[0]?.name || "Sample Beverage Supplier";
+        const sampleProd1 = products[0]?.name || "Cold Drink 1.5L";
+        const sampleProd2 = products[1]?.name || "Cold Drink 500ml";
+
+        const templateData = [
+            {
+                "Supplier Name": sampleSupplier,
+                "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
+                "Product Name": sampleProd1,
+                "Unit (Carton/Piece)": "Carton",
+                "Quantity": 50,
+                "Cost Price Per Unit": 1100,
+                "Payment Type (Cash/Credit)": "Cash",
+                "Paid Amount": 55000,
+                "Note": "Truck Load 01"
+            },
+            {
+                "Supplier Name": sampleSupplier,
+                "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
+                "Product Name": sampleProd2,
+                "Unit (Carton/Piece)": "Carton",
+                "Quantity": 20,
+                "Cost Price Per Unit": 1350,
+                "Payment Type (Cash/Credit)": "Cash",
+                "Paid Amount": 27000,
+                "Note": "Truck Load 01"
+            }
+        ];
+
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Purchases_Template");
+        XLSX.writeFile(wb, `Bulk_Purchases_Template_${getLocalDateString()}.xlsx`);
+        toast.success("Purchases template downloaded!");
+    };
+
+    // Upload and Parse Excel File
+    const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+
+                if (!data || data.length === 0) {
+                    toast.error("The uploaded file contains no rows");
+                    return;
+                }
+
+                // Group rows by (Supplier + Date + PaymentType) into complete Bills
+                const groupedBillsMap = new Map();
+
+                data.forEach((row, index) => {
+                    const suppNameRaw = row["Supplier Name"] || row["Supplier"] || row["SupplierName"] || "";
+                    const dateRaw = row["Purchase Date (YYYY-MM-DD)"] || row["Purchase Date"] || row["Date"] || globalDate;
+                    const payTypeRaw = row["Payment Type (Cash/Credit)"] || row["Payment Type"] || row["PaymentType"] || "Cash";
+                    const noteRaw = row["Note"] || row["Reference"] || "";
+
+                    // Normalize date
+                    let purchaseDate = globalDate;
+                    if (dateRaw) {
+                        if (typeof dateRaw === 'number') {
+                            const parsed = new Date((dateRaw - (25567 + 2)) * 86400 * 1000);
+                            purchaseDate = getLocalDateString(parsed);
+                        } else {
+                            purchaseDate = String(dateRaw).trim().slice(0, 10);
+                        }
+                    }
+
+                    const paymentType = String(payTypeRaw).toLowerCase().includes('credit') ? 'Credit' : 'Cash';
+
+                    // Match supplier
+                    const matchedSupplier = suppliers.find(s => 
+                        s.name.toLowerCase().trim() === String(suppNameRaw).toLowerCase().trim() ||
+                        (s.phone && String(s.phone).trim() === String(suppNameRaw).trim())
+                    );
+                    const supplierId = matchedSupplier ? matchedSupplier._id : '';
+
+                    const groupKey = `${supplierId}_${purchaseDate}_${paymentType}_${noteRaw}`;
+
+                    // Product matching
+                    const prodNameRaw = row["Product Name"] || row["Product"] || row["ProductName"] || "";
+                    const matchedProduct = products.find(p => 
+                        p.name.toLowerCase().trim() === String(prodNameRaw).toLowerCase().trim() ||
+                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === String(prodNameRaw).toLowerCase().trim())
+                    );
+
+                    const unitRaw = String(row["Unit (Carton/Piece)"] || row["Unit"] || "Carton").toLowerCase().includes('piece') ? 'Piece' : 'Carton';
+                    const qtyRaw = parseFloat(row["Quantity"] || row["Qty"] || 1) || 1;
+
+                    let costRaw = parseFloat(row["Cost Price Per Unit"] || row["Cost Price"] || row["Cost"] || row["Rate"]);
+                    if (isNaN(costRaw) && matchedProduct) {
+                        costRaw = unitRaw === 'Carton' 
+                            ? (matchedProduct.costPricePerCarton || matchedProduct.pricePerCarton) 
+                            : (matchedProduct.costPricePerPiece || matchedProduct.pricePerPiece);
+                    }
+                    if (isNaN(costRaw)) costRaw = 0;
+
+                    const itemTotal = qtyRaw * costRaw;
+
+                    const itemObj = {
+                        id: Date.now() + Math.random() + index,
+                        product: matchedProduct ? matchedProduct._id : '',
+                        unit: unitRaw,
+                        quantity: qtyRaw,
+                        costAtPurchase: costRaw,
+                        totalCost: itemTotal
+                    };
+
+                    if (!groupedBillsMap.has(groupKey)) {
+                        const paidRaw = parseFloat(row["Paid Amount"] || row["Paid"] || row["PaidAmount"]);
+                        groupedBillsMap.set(groupKey, {
+                            id: Date.now() + Math.random() + index * 100,
+                            supplier: supplierId,
+                            purchaseDate: purchaseDate,
+                            paymentType: paymentType,
+                            paidAmount: isNaN(paidRaw) ? (paymentType === 'Cash' ? itemTotal : 0) : paidRaw,
+                            note: noteRaw,
+                            status: 'pending',
+                            errorMsg: '',
+                            items: [itemObj]
+                        });
+                    } else {
+                        const existingBill = groupedBillsMap.get(groupKey);
+                        existingBill.items.push(itemObj);
+
+                        if (existingBill.paymentType === 'Cash') {
+                            const grandTotal = existingBill.items.reduce((s, it) => s + (it.totalCost || 0), 0);
+                            existingBill.paidAmount = grandTotal;
+                        }
+                    }
+                });
+
+                const parsedBills = Array.from(groupedBillsMap.values());
+                if (parsedBills.length > 0) {
+                    setBills(parsedBills);
+                    toast.success(`Successfully loaded ${parsedBills.length} purchase bills from file!`);
+                }
+            } catch (err) {
+                console.error("Excel parse error:", err);
+                toast.error("Failed to read Excel file. Please use the template format.");
+            } finally {
+                e.target.value = '';
+            }
+        };
+        reader.readAsBinaryString(file);
     };
 
     // Add new Bill
@@ -292,12 +450,25 @@ const BulkPurchases = () => {
                         Bulk Purchases (Multi-Bill Entry)
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
-                        Create and record multiple complete vendor purchase bills for any date in one go.
+                        Create and record multiple vendor purchase bills or upload from Excel.
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <button onClick={resetAllBills} className="secondary" style={{ padding: '12px 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <RotateCcw size={18} /> Reset All
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        accept=".xlsx, .xls, .csv" 
+                        style={{ display: 'none' }} 
+                    />
+                    <button onClick={handleDownloadTemplate} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+                        <Download size={18} /> Download Template
+                    </button>
+                    <button onClick={() => fileInputRef.current?.click()} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', backgroundColor: '#f0fdf4', color: '#166534', border: '1.5px solid #bbf7d0' }}>
+                        <Upload size={18} /> Upload Excel / CSV
+                    </button>
+                    <button onClick={resetAllBills} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <RotateCcw size={18} /> Reset
                     </button>
                     <button onClick={handleSubmitAll} disabled={submitting} className="primary" style={{ padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800' }}>
                         <Save size={18} /> {submitting ? 'Saving All Bills...' : `Save All Bills (${bills.length})`}
