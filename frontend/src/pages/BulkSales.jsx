@@ -65,18 +65,19 @@ const BulkSales = () => {
         return { subtotal, discount, netTotal, received, balance };
     };
 
-    // Download Sample Excel Template
+    // Download Sample Excel Template with Reference Sheet
     const handleDownloadTemplate = () => {
-        const sampleCustomer = customers[0]?.name || "Sample Customer";
-        const sampleProd1 = products[0]?.name || "Cold Drink 1.5L";
-        const sampleProd2 = products[1]?.name || "Cold Drink 500ml";
+        const sampleCustomer = customers[0];
+        const sampleProd1 = products[0];
+        const sampleProd2 = products[1];
 
+        // Sheet 1: Template data (Supports both ID or Name)
         const templateData = [
             {
                 "Bill No / Invoice No": "BILL-101",
-                "Customer Name": sampleCustomer,
+                "Customer ID or Name": sampleCustomer?._id || sampleCustomer?.name || "Customer ID or Name",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
-                "Product Name": sampleProd1,
+                "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 10,
                 "Price Per Unit": 1250,
@@ -87,9 +88,9 @@ const BulkSales = () => {
             },
             {
                 "Bill No / Invoice No": "BILL-101",
-                "Customer Name": sampleCustomer,
+                "Customer ID or Name": sampleCustomer?._id || sampleCustomer?.name || "Customer ID or Name",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
-                "Product Name": sampleProd2,
+                "Product ID or Name": sampleProd2?._id || sampleProd2?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 5,
                 "Price Per Unit": 1500,
@@ -100,9 +101,9 @@ const BulkSales = () => {
             },
             {
                 "Bill No / Invoice No": "BILL-102",
-                "Customer Name": "Walk-in Customer",
+                "Customer ID or Name": "Walk-in Customer",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
-                "Product Name": sampleProd1,
+                "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Piece",
                 "Quantity": 12,
                 "Price Per Unit": 110,
@@ -113,11 +114,36 @@ const BulkSales = () => {
             }
         ];
 
-        const ws = XLSX.utils.json_to_sheet(templateData);
+        // Sheet 2: Customers List with IDs for reference
+        const customersReference = customers.map(c => ({
+            "Customer ID": c._id,
+            "Customer Name": c.name,
+            "Phone": c.phone || "",
+            "Receivable Balance": c.outstandingReceivable || 0
+        }));
+
+        // Sheet 3: Products List with IDs for reference
+        const productsReference = products.map(p => ({
+            "Product ID": p._id,
+            "Product Name": p.name,
+            "Price Per Carton": p.pricePerCarton || 0,
+            "Price Per Piece": p.pricePerPiece || 0,
+            "Pieces Per Carton": p.piecesPerCarton || 1
+        }));
+
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Sales_Template");
+
+        const wsTemplate = XLSX.utils.json_to_sheet(templateData);
+        XLSX.utils.book_append_sheet(wb, wsTemplate, "Sales_Entry");
+
+        const wsCustomers = XLSX.utils.json_to_sheet(customersReference);
+        XLSX.utils.book_append_sheet(wb, wsCustomers, "Customers_ID_List");
+
+        const wsProducts = XLSX.utils.json_to_sheet(productsReference);
+        XLSX.utils.book_append_sheet(wb, wsProducts, "Products_ID_List");
+
         XLSX.writeFile(wb, `Bulk_Sales_Template_${getLocalDateString()}.xlsx`);
-        toast.success("Excel template downloaded!");
+        toast.success("Sales template downloaded with Customer & Product IDs!");
     };
 
     // Upload and Parse Excel File
@@ -139,13 +165,11 @@ const BulkSales = () => {
                     return;
                 }
 
-                // Explicit grouping by Bill No / Invoice No
-                // If Bill No is empty, each row is preserved as its own distinct separate bill!
                 const groupedBillsMap = new Map();
 
                 data.forEach((row, index) => {
                     const billNoRaw = String(row["Bill No / Invoice No"] || row["Bill No"] || row["Invoice No"] || row["Invoice #"] || row["Bill #"] || "").trim();
-                    const custNameRaw = row["Customer Name"] || row["Customer"] || row["CustomerName"] || "";
+                    const custIdentifier = String(row["Customer ID or Name"] || row["Customer ID"] || row["Customer Name"] || row["Customer"] || row["CustomerName"] || "").trim();
                     const dateRaw = row["Sale Date (YYYY-MM-DD)"] || row["Sale Date"] || row["Date"] || globalDate;
                     const payTypeRaw = row["Payment Type (Cash/Credit)"] || row["Payment Type"] || row["PaymentType"] || "Cash";
                     const noteRaw = row["Note"] || row["Reference"] || (billNoRaw ? `Bill #${billNoRaw}` : "");
@@ -163,22 +187,23 @@ const BulkSales = () => {
 
                     const paymentType = String(payTypeRaw).toLowerCase().includes('credit') ? 'Credit' : 'Cash';
 
-                    // Match customer
+                    // Match customer by ID OR Name OR Phone
                     const matchedCustomer = customers.find(c => 
-                        c.name.toLowerCase().trim() === String(custNameRaw).toLowerCase().trim() ||
-                        (c.phone && String(c.phone).trim() === String(custNameRaw).trim())
+                        String(c._id).trim() === custIdentifier ||
+                        c.name.toLowerCase().trim() === custIdentifier.toLowerCase() ||
+                        (c.phone && String(c.phone).trim() === custIdentifier)
                     );
                     const customerId = matchedCustomer ? matchedCustomer._id : '';
 
-                    // Group Key: If Bill No is provided, group same Bill No together.
-                    // If Bill No is blank, do NOT merge; keep as separate individual sale bill!
+                    // Group Key
                     const groupKey = billNoRaw ? `${customerId}_${saleDate}_${paymentType}_${billNoRaw}` : `distinct_bill_${index}`;
 
-                    // Product matching
-                    const prodNameRaw = row["Product Name"] || row["Product"] || row["ProductName"] || "";
+                    // Product matching by ID OR Name OR customerProductName
+                    const prodIdentifier = String(row["Product ID or Name"] || row["Product ID"] || row["Product Name"] || row["Product"] || row["ProductName"] || "").trim();
                     const matchedProduct = products.find(p => 
-                        p.name.toLowerCase().trim() === String(prodNameRaw).toLowerCase().trim() ||
-                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === String(prodNameRaw).toLowerCase().trim())
+                        String(p._id).trim() === prodIdentifier ||
+                        p.name.toLowerCase().trim() === prodIdentifier.toLowerCase() ||
+                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === prodIdentifier.toLowerCase())
                     );
 
                     const unitRaw = String(row["Unit (Carton/Piece)"] || row["Unit"] || "Carton").toLowerCase().includes('piece') ? 'Piece' : 'Carton';
@@ -483,7 +508,7 @@ const BulkSales = () => {
                         Bulk Sales (Multi-Bill Entry)
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
-                        Create and record multiple complete customer invoices or upload from Excel (grouped by Bill/Invoice No).
+                        Create and record multiple complete customer invoices or upload from Excel (supports Customer/Product IDs and Names).
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -495,7 +520,7 @@ const BulkSales = () => {
                         style={{ display: 'none' }} 
                     />
                     <button onClick={handleDownloadTemplate} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
-                        <Download size={18} /> Download Template
+                        <Download size={18} /> Download Template (with IDs)
                     </button>
                     <button onClick={() => fileInputRef.current?.click()} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', backgroundColor: '#f0fdf4', color: '#166534', border: '1.5px solid #bbf7d0' }}>
                         <Upload size={18} /> Upload Excel / CSV

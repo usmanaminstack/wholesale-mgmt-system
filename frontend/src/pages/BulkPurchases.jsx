@@ -62,42 +62,43 @@ const BulkPurchases = () => {
         return { grandTotal, paid, balance };
     };
 
-    // Download Sample Excel Template
+    // Download Sample Excel Template with Reference Sheet
     const handleDownloadTemplate = () => {
-        const sampleSupplier = suppliers[0]?.name || "Beverage Vendor";
-        const sampleProd1 = products[0]?.name || "Cold Drink 1.5L";
-        const sampleProd2 = products[1]?.name || "Cold Drink 500ml";
+        const sampleSupplier = suppliers[0];
+        const sampleProd1 = products[0];
+        const sampleProd2 = products[1];
 
+        // Sheet 1: Template data (Supports both ID or Name)
         const templateData = [
             {
                 "Bill No / Invoice No": "INV-101",
-                "Supplier Name": sampleSupplier,
+                "Supplier ID or Name": sampleSupplier?._id || sampleSupplier?.name || "Supplier ID or Name",
                 "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
-                "Product Name": sampleProd1,
+                "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 50,
                 "Cost Price Per Unit": 1100,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Paid Amount": 55000,
-                "Note": "Morning Delivery"
+                "Note": "Truck Load 01"
             },
             {
                 "Bill No / Invoice No": "INV-101",
-                "Supplier Name": sampleSupplier,
+                "Supplier ID or Name": sampleSupplier?._id || sampleSupplier?.name || "Supplier ID or Name",
                 "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
-                "Product Name": sampleProd2,
+                "Product ID or Name": sampleProd2?._id || sampleProd2?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 20,
                 "Cost Price Per Unit": 1350,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Paid Amount": 27000,
-                "Note": "Morning Delivery"
+                "Note": "Truck Load 01"
             },
             {
                 "Bill No / Invoice No": "INV-102",
-                "Supplier Name": sampleSupplier,
+                "Supplier ID or Name": sampleSupplier?._id || sampleSupplier?.name || "Supplier ID or Name",
                 "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
-                "Product Name": sampleProd1,
+                "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
                 "Unit (Carton/Piece)": "Carton",
                 "Quantity": 15,
                 "Cost Price Per Unit": 1100,
@@ -107,11 +108,36 @@ const BulkPurchases = () => {
             }
         ];
 
-        const ws = XLSX.utils.json_to_sheet(templateData);
+        // Sheet 2: Suppliers List with IDs for reference
+        const suppliersReference = suppliers.map(s => ({
+            "Supplier ID": s._id,
+            "Supplier Name": s.name,
+            "Phone": s.phone || "",
+            "Payable Balance": s.outstandingPayable || 0
+        }));
+
+        // Sheet 3: Products List with IDs for reference
+        const productsReference = products.map(p => ({
+            "Product ID": p._id,
+            "Product Name": p.name,
+            "Cost Per Carton": p.costPricePerCarton || 0,
+            "Cost Per Piece": p.costPricePerPiece || 0,
+            "Pieces Per Carton": p.piecesPerCarton || 1
+        }));
+
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Purchases_Template");
+
+        const wsTemplate = XLSX.utils.json_to_sheet(templateData);
+        XLSX.utils.book_append_sheet(wb, wsTemplate, "Purchases_Entry");
+
+        const wsSuppliers = XLSX.utils.json_to_sheet(suppliersReference);
+        XLSX.utils.book_append_sheet(wb, wsSuppliers, "Suppliers_ID_List");
+
+        const wsProducts = XLSX.utils.json_to_sheet(productsReference);
+        XLSX.utils.book_append_sheet(wb, wsProducts, "Products_ID_List");
+
         XLSX.writeFile(wb, `Bulk_Purchases_Template_${getLocalDateString()}.xlsx`);
-        toast.success("Purchases template downloaded!");
+        toast.success("Purchases template downloaded with Supplier & Product IDs!");
     };
 
     // Upload and Parse Excel File
@@ -133,13 +159,11 @@ const BulkPurchases = () => {
                     return;
                 }
 
-                // Explicit grouping by Bill No / Invoice No
-                // If Bill No is empty, each row is preserved as its own distinct separate bill!
                 const groupedBillsMap = new Map();
 
                 data.forEach((row, index) => {
                     const billNoRaw = String(row["Bill No / Invoice No"] || row["Bill No"] || row["Invoice No"] || row["Invoice #"] || row["Bill #"] || "").trim();
-                    const suppNameRaw = row["Supplier Name"] || row["Supplier"] || row["SupplierName"] || "";
+                    const suppIdentifier = String(row["Supplier ID or Name"] || row["Supplier ID"] || row["Supplier Name"] || row["Supplier"] || row["SupplierName"] || "").trim();
                     const dateRaw = row["Purchase Date (YYYY-MM-DD)"] || row["Purchase Date"] || row["Date"] || globalDate;
                     const payTypeRaw = row["Payment Type (Cash/Credit)"] || row["Payment Type"] || row["PaymentType"] || "Cash";
                     const noteRaw = row["Note"] || row["Reference"] || (billNoRaw ? `Bill #${billNoRaw}` : "");
@@ -157,22 +181,23 @@ const BulkPurchases = () => {
 
                     const paymentType = String(payTypeRaw).toLowerCase().includes('credit') ? 'Credit' : 'Cash';
 
-                    // Match supplier
+                    // Match supplier by ID OR Name OR Phone
                     const matchedSupplier = suppliers.find(s => 
-                        s.name.toLowerCase().trim() === String(suppNameRaw).toLowerCase().trim() ||
-                        (s.phone && String(s.phone).trim() === String(suppNameRaw).trim())
+                        String(s._id).trim() === suppIdentifier ||
+                        s.name.toLowerCase().trim() === suppIdentifier.toLowerCase() ||
+                        (s.phone && String(s.phone).trim() === suppIdentifier)
                     );
                     const supplierId = matchedSupplier ? matchedSupplier._id : '';
 
-                    // Group Key: If Bill No is provided, group same Bill No together.
-                    // If Bill No is blank, do NOT merge; keep as separate individual purchase bill!
+                    // Group Key
                     const groupKey = billNoRaw ? `${supplierId}_${purchaseDate}_${paymentType}_${billNoRaw}` : `distinct_bill_${index}`;
 
-                    // Product matching
-                    const prodNameRaw = row["Product Name"] || row["Product"] || row["ProductName"] || "";
+                    // Product matching by ID OR Name OR customerProductName
+                    const prodIdentifier = String(row["Product ID or Name"] || row["Product ID"] || row["Product Name"] || row["Product"] || row["ProductName"] || "").trim();
                     const matchedProduct = products.find(p => 
-                        p.name.toLowerCase().trim() === String(prodNameRaw).toLowerCase().trim() ||
-                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === String(prodNameRaw).toLowerCase().trim())
+                        String(p._id).trim() === prodIdentifier ||
+                        p.name.toLowerCase().trim() === prodIdentifier.toLowerCase() ||
+                        (p.customerProductName && p.customerProductName.toLowerCase().trim() === prodIdentifier.toLowerCase())
                     );
 
                     const unitRaw = String(row["Unit (Carton/Piece)"] || row["Unit"] || "Carton").toLowerCase().includes('piece') ? 'Piece' : 'Carton';
@@ -469,7 +494,7 @@ const BulkPurchases = () => {
                         Bulk Purchases (Multi-Bill Entry)
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
-                        Create and record multiple vendor purchase bills or upload from Excel (grouped by Bill/Invoice No).
+                        Create and record multiple vendor purchase bills or upload from Excel (supports Supplier/Product IDs and Names).
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -481,7 +506,7 @@ const BulkPurchases = () => {
                         style={{ display: 'none' }} 
                     />
                     <button onClick={handleDownloadTemplate} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
-                        <Download size={18} /> Download Template
+                        <Download size={18} /> Download Template (with IDs)
                     </button>
                     <button onClick={() => fileInputRef.current?.click()} className="secondary" style={{ padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', backgroundColor: '#f0fdf4', color: '#166534', border: '1.5px solid #bbf7d0' }}>
                         <Upload size={18} /> Upload Excel / CSV
