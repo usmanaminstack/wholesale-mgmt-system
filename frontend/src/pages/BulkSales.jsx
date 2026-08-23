@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import { getLocalDateString } from '../utils/dateUtils';
-import { Plus, Trash2, Save, RotateCcw, CheckCircle2, XCircle, AlertCircle, ShoppingBag, Calendar, CreditCard, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trash2, Save, RotateCcw, CheckCircle2, XCircle, AlertCircle, ShoppingBag, Calendar, CreditCard, Download, Upload } from 'lucide-react';
 import SearchableSelect from '../components/SearchableSelect';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -22,7 +22,7 @@ const BulkSales = () => {
         discount: 0,
         receivedAmount: 0,
         note: '',
-        status: 'pending', // 'pending' | 'submitting' | 'success' | 'error'
+        status: 'pending',
         errorMsg: '',
         items: [
             {
@@ -73,6 +73,7 @@ const BulkSales = () => {
 
         const templateData = [
             {
+                "Bill No / Invoice No": "BILL-101",
                 "Customer Name": sampleCustomer,
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product Name": sampleProd1,
@@ -82,9 +83,10 @@ const BulkSales = () => {
                 "Discount": 0,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Received Amount": 12500,
-                "Note": "Order 101"
+                "Note": "Order Morning"
             },
             {
+                "Bill No / Invoice No": "BILL-101",
                 "Customer Name": sampleCustomer,
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product Name": sampleProd2,
@@ -94,9 +96,10 @@ const BulkSales = () => {
                 "Discount": 0,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Received Amount": 7500,
-                "Note": "Order 101"
+                "Note": "Order Morning"
             },
             {
+                "Bill No / Invoice No": "BILL-102",
                 "Customer Name": "Walk-in Customer",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product Name": sampleProd1,
@@ -106,7 +109,7 @@ const BulkSales = () => {
                 "Discount": 20,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Received Amount": 1300,
-                "Note": "Counter Sale"
+                "Note": "Evening Separate Bill"
             }
         ];
 
@@ -136,14 +139,16 @@ const BulkSales = () => {
                     return;
                 }
 
-                // Group rows by (Customer + Date + PaymentType) into complete Bills
+                // Explicit grouping by Bill No / Invoice No
+                // If Bill No is empty, each row is preserved as its own distinct separate bill!
                 const groupedBillsMap = new Map();
 
                 data.forEach((row, index) => {
+                    const billNoRaw = String(row["Bill No / Invoice No"] || row["Bill No"] || row["Invoice No"] || row["Invoice #"] || row["Bill #"] || "").trim();
                     const custNameRaw = row["Customer Name"] || row["Customer"] || row["CustomerName"] || "";
                     const dateRaw = row["Sale Date (YYYY-MM-DD)"] || row["Sale Date"] || row["Date"] || globalDate;
                     const payTypeRaw = row["Payment Type (Cash/Credit)"] || row["Payment Type"] || row["PaymentType"] || "Cash";
-                    const noteRaw = row["Note"] || row["Reference"] || "";
+                    const noteRaw = row["Note"] || row["Reference"] || (billNoRaw ? `Bill #${billNoRaw}` : "");
 
                     // Normalize date
                     let saleDate = globalDate;
@@ -165,7 +170,9 @@ const BulkSales = () => {
                     );
                     const customerId = matchedCustomer ? matchedCustomer._id : '';
 
-                    const groupKey = `${customerId}_${saleDate}_${paymentType}_${noteRaw}`;
+                    // Group Key: If Bill No is provided, group same Bill No together.
+                    // If Bill No is blank, do NOT merge; keep as separate individual sale bill!
+                    const groupKey = billNoRaw ? `${customerId}_${saleDate}_${paymentType}_${billNoRaw}` : `distinct_bill_${index}`;
 
                     // Product matching
                     const prodNameRaw = row["Product Name"] || row["Product"] || row["ProductName"] || "";
@@ -224,7 +231,7 @@ const BulkSales = () => {
                 const parsedBills = Array.from(groupedBillsMap.values());
                 if (parsedBills.length > 0) {
                     setBills(parsedBills);
-                    toast.success(`Successfully loaded ${parsedBills.length} complete bills from file!`);
+                    toast.success(`Successfully loaded ${parsedBills.length} sales bills from file!`);
                 }
             } catch (err) {
                 console.error("Excel parse error:", err);
@@ -404,6 +411,7 @@ const BulkSales = () => {
                 receivedAmount: received,
                 discount: discount,
                 saleDate: bill.saleDate,
+                note: bill.note || '',
                 isRetail: !bill.customer,
                 items: validItems.map(item => ({
                     product: item.product,
@@ -475,7 +483,7 @@ const BulkSales = () => {
                         Bulk Sales (Multi-Bill Entry)
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
-                        Create and record multiple complete customer invoices or upload from Excel.
+                        Create and record multiple complete customer invoices or upload from Excel (grouped by Bill/Invoice No).
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -581,7 +589,7 @@ const BulkSales = () => {
                                         {bIdx + 1}
                                     </span>
                                     <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'var(--text)' }}>
-                                        Sale Bill #{bIdx + 1}
+                                        Sale Bill #{bIdx + 1} {bill.note ? `(${bill.note})` : ''}
                                     </h3>
                                     {bill.status === 'success' && (
                                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontWeight: '800', fontSize: '0.85rem' }}>
@@ -650,11 +658,11 @@ const BulkSales = () => {
 
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                                        Bill Note / Ref
+                                        Bill No / Invoice Ref
                                     </label>
                                     <input 
                                         type="text" 
-                                        placeholder="Optional reference info..."
+                                        placeholder="e.g. BILL-101 or Ref Info"
                                         value={bill.note} 
                                         onChange={e => updateBillHeader(bill.id, 'note', e.target.value)}
                                         style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid var(--border)' }}

@@ -21,7 +21,7 @@ const BulkPurchases = () => {
         paymentType: globalPaymentType,
         paidAmount: 0,
         note: '',
-        status: 'pending', // 'pending' | 'submitting' | 'success' | 'error'
+        status: 'pending',
         errorMsg: '',
         items: [
             {
@@ -64,12 +64,13 @@ const BulkPurchases = () => {
 
     // Download Sample Excel Template
     const handleDownloadTemplate = () => {
-        const sampleSupplier = suppliers[0]?.name || "Sample Beverage Supplier";
+        const sampleSupplier = suppliers[0]?.name || "Beverage Vendor";
         const sampleProd1 = products[0]?.name || "Cold Drink 1.5L";
         const sampleProd2 = products[1]?.name || "Cold Drink 500ml";
 
         const templateData = [
             {
+                "Bill No / Invoice No": "INV-101",
                 "Supplier Name": sampleSupplier,
                 "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product Name": sampleProd1,
@@ -78,9 +79,10 @@ const BulkPurchases = () => {
                 "Cost Price Per Unit": 1100,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Paid Amount": 55000,
-                "Note": "Truck Load 01"
+                "Note": "Morning Delivery"
             },
             {
+                "Bill No / Invoice No": "INV-101",
                 "Supplier Name": sampleSupplier,
                 "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product Name": sampleProd2,
@@ -89,7 +91,19 @@ const BulkPurchases = () => {
                 "Cost Price Per Unit": 1350,
                 "Payment Type (Cash/Credit)": "Cash",
                 "Paid Amount": 27000,
-                "Note": "Truck Load 01"
+                "Note": "Morning Delivery"
+            },
+            {
+                "Bill No / Invoice No": "INV-102",
+                "Supplier Name": sampleSupplier,
+                "Purchase Date (YYYY-MM-DD)": getLocalDateString(),
+                "Product Name": sampleProd1,
+                "Unit (Carton/Piece)": "Carton",
+                "Quantity": 15,
+                "Cost Price Per Unit": 1100,
+                "Payment Type (Cash/Credit)": "Credit",
+                "Paid Amount": 0,
+                "Note": "Evening Separate Bill"
             }
         ];
 
@@ -119,14 +133,16 @@ const BulkPurchases = () => {
                     return;
                 }
 
-                // Group rows by (Supplier + Date + PaymentType) into complete Bills
+                // Explicit grouping by Bill No / Invoice No
+                // If Bill No is empty, each row is preserved as its own distinct separate bill!
                 const groupedBillsMap = new Map();
 
                 data.forEach((row, index) => {
+                    const billNoRaw = String(row["Bill No / Invoice No"] || row["Bill No"] || row["Invoice No"] || row["Invoice #"] || row["Bill #"] || "").trim();
                     const suppNameRaw = row["Supplier Name"] || row["Supplier"] || row["SupplierName"] || "";
                     const dateRaw = row["Purchase Date (YYYY-MM-DD)"] || row["Purchase Date"] || row["Date"] || globalDate;
                     const payTypeRaw = row["Payment Type (Cash/Credit)"] || row["Payment Type"] || row["PaymentType"] || "Cash";
-                    const noteRaw = row["Note"] || row["Reference"] || "";
+                    const noteRaw = row["Note"] || row["Reference"] || (billNoRaw ? `Bill #${billNoRaw}` : "");
 
                     // Normalize date
                     let purchaseDate = globalDate;
@@ -148,7 +164,9 @@ const BulkPurchases = () => {
                     );
                     const supplierId = matchedSupplier ? matchedSupplier._id : '';
 
-                    const groupKey = `${supplierId}_${purchaseDate}_${paymentType}_${noteRaw}`;
+                    // Group Key: If Bill No is provided, group same Bill No together.
+                    // If Bill No is blank, do NOT merge; keep as separate individual purchase bill!
+                    const groupKey = billNoRaw ? `${supplierId}_${purchaseDate}_${paymentType}_${billNoRaw}` : `distinct_bill_${index}`;
 
                     // Product matching
                     const prodNameRaw = row["Product Name"] || row["Product"] || row["ProductName"] || "";
@@ -380,6 +398,7 @@ const BulkPurchases = () => {
                 paymentType: bill.paymentType,
                 paidAmount: paid,
                 purchaseDate: bill.purchaseDate,
+                note: bill.note || '',
                 items: validItems.map(item => ({
                     product: item.product,
                     quantity: parseFloat(item.quantity) || 1,
@@ -450,7 +469,7 @@ const BulkPurchases = () => {
                         Bulk Purchases (Multi-Bill Entry)
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
-                        Create and record multiple vendor purchase bills or upload from Excel.
+                        Create and record multiple vendor purchase bills or upload from Excel (grouped by Bill/Invoice No).
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -556,7 +575,7 @@ const BulkPurchases = () => {
                                         {bIdx + 1}
                                     </span>
                                     <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'var(--text)' }}>
-                                        Purchase Bill #{bIdx + 1}
+                                        Purchase Bill #{bIdx + 1} {bill.note ? `(${bill.note})` : ''}
                                     </h3>
                                     {bill.status === 'success' && (
                                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontWeight: '800', fontSize: '0.85rem' }}>
@@ -625,11 +644,11 @@ const BulkPurchases = () => {
 
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                                        Bill Note / Ref
+                                        Bill No / Invoice Ref
                                     </label>
                                     <input 
                                         type="text" 
-                                        placeholder="Invoice # or ref..."
+                                        placeholder="e.g. INV-101 or Ref Info"
                                         value={bill.note} 
                                         onChange={e => updateBillHeader(bill.id, 'note', e.target.value)}
                                         style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid var(--border)' }}
