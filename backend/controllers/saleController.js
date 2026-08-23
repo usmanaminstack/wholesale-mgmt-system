@@ -308,3 +308,127 @@ exports.deleteSale = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.createBulkSales = async (req, res) => {
+    try {
+        const { sales } = req.body;
+        if (!sales || !Array.isArray(sales)) {
+            return res.status(400).json({ message: 'sales array is required' });
+        }
+
+        const results = [];
+        for (const saleData of sales) {
+            try {
+                const { customer, customerName, items, paymentType, receivedAmount, saleDate, isRetail, discount = 0, previousBalance = 0 } = saleData;
+
+                if (!items || !Array.isArray(items) || items.length === 0) {
+                    throw new Error('At least one item is required per sale');
+                }
+
+                let totalAmount = 0;
+                const processedItems = [];
+
+                for (const item of items) {
+                    totalAmount += item.totalPrice;
+                    const productDoc = await Product.findById(item.product);
+
+                    let cost = 0;
+                    if (productDoc) {
+                        const ppc = productDoc.piecesPerCarton || 1;
+                        const cCost = productDoc.costPricePerCarton || 0;
+                        const pCost = productDoc.costPricePerPiece || 0;
+
+                        if (item.unit === 'Carton') {
+                            cost = cCost || (pCost * ppc);
+                        } else {
+                            cost = pCost || (cCost / ppc);
+                        }
+                    }
+                    processedItems.push({ ...item, costAtSale: cost || 0 });
+                }
+
+                let finalCustomerId = customer;
+                const balanceAmount = totalAmount - discount - receivedAmount;
+
+                if (!finalCustomerId && (balanceAmount > 0 || saleData.saveAsCustomer)) {
+                    const newCustomer = new Customer({
+                        name: customerName || 'Walk-in Customer',
+                        phone: saleData.phone || '0000000000',
+                        address: saleData.address || 'Auto-created from Bulk Sale'
+                    });
+                    const savedCustomer = await newCustomer.save();
+                    finalCustomerId = savedCustomer._id;
+                }
+
+                const sale = new Sale({
+                    customer: finalCustomerId,
+                    customerName,
+                    items: processedItems,
+                    totalAmount,
+                    receivedAmount,
+                    discount,
+                    balanceAmount,
+                    previousBalance,
+                    paymentType,
+                    saleDate,
+                    isRetail
+                });
+
+                const savedSale = await sale.save();
+
+                // Update Stock
+                for (const item of items) {
+                    const product = await Product.findById(item.product);
+                    if (product) {
+                        const qty = item.quantity || item.quantityInCartons || 0;
+                        const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
+                        product.stockInPieces -= piecesToReduce;
+                        await product.save();
+                    }
+                }
+
+                // Update Customer & Ledger (if not guest retail)
+                if (finalCustomerId) {
+                    const customerDoc = await Customer.findById(finalCustomerId);
+                    const netAmount = totalAmount - discount;
+                    if (customerDoc) {
+                        customerDoc.totalSales += netAmount;
+                        customerDoc.totalReceived += receivedAmount;
+                        customerDoc.outstandingReceivable += balanceAmount;
+                        await customerDoc.save();
+
+                        await addLedgerEntry({
+                            entityType: 'Customer',
+                            entityId: finalCustomerId,
+                            transactionType: 'Sale',
+                            referenceId: savedSale._id,
+                            debit: netAmount,
+                            description: `Sale (Net) - Ref: ${savedSale._id}${discount > 0 ? ` (Disc: ${discount})` : ''} (Bulk)`,
+                            date: saleDate
+                        });
+
+                        if (receivedAmount > 0) {
+                            await addLedgerEntry({
+                                entityType: 'Customer',
+                                entityId: finalCustomerId,
+                                transactionType: 'Payment',
+                                referenceId: savedSale._id,
+                                credit: receivedAmount,
+                                description: `Payment for Sale - Ref: ${savedSale._id} (Bulk)`,
+                                date: saleDate
+                            });
+                        }
+                    }
+                }
+
+                results.push({ status: 'success', sale: savedSale });
+            } catch (err) {
+                results.push({ status: 'error', message: err.message, input: saleData });
+            }
+        }
+
+        res.status(201).json({ results });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

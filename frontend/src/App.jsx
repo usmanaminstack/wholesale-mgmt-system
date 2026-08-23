@@ -15,6 +15,8 @@ import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import DailyLedger from './pages/DailyLedger';
 import BulkPayments from './pages/BulkPayments';
+import BulkSales from './pages/BulkSales';
+import BulkPurchases from './pages/BulkPurchases';
 
 function App() {
   return (
@@ -36,7 +38,9 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="inventory" element={<Inventory />} />
               <Route path="purchases" element={<Purchases />} />
+              <Route path="bulk-purchases" element={<BulkPurchases />} />
               <Route path="sales" element={<Sales />} />
+              <Route path="bulk-sales" element={<BulkSales />} />
               <Route path="customers" element={<Customers />} />
               <Route path="suppliers" element={<Suppliers />} />
               <Route path="payments" element={<Payments />} />

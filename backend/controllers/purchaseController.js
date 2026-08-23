@@ -277,3 +277,105 @@ exports.deletePurchase = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.createBulkPurchases = async (req, res) => {
+    try {
+        const { purchases } = req.body;
+        if (!purchases || !Array.isArray(purchases)) {
+            return res.status(400).json({ message: 'purchases array is required' });
+        }
+
+        const results = [];
+        for (const purchData of purchases) {
+            try {
+                const { supplier, items, paymentType, paidAmount, purchaseDate } = purchData;
+
+                if (!items || !Array.isArray(items) || items.length === 0) {
+                    throw new Error('At least one item is required per purchase');
+                }
+
+                let grandTotal = 0;
+                for (const item of items) {
+                    grandTotal += item.totalCost;
+                }
+
+                const balanceAmount = grandTotal - paidAmount;
+
+                const purchase = new Purchase({
+                    supplier,
+                    items,
+                    grandTotal,
+                    paidAmount,
+                    balanceAmount,
+                    paymentType,
+                    purchaseDate
+                });
+
+                const savedPurchase = await purchase.save();
+
+                // Update Stock & Cost
+                for (const item of items) {
+                    const product = await Product.findById(item.product);
+                    if (product) {
+                        const piecesPerCtn  = product.piecesPerCarton || 1;
+                        const qty           = item.quantity || 0;
+                        const newQtyPieces  = item.unit === 'Carton' ? qty * piecesPerCtn : qty;
+                        const purchaseRate  = item.costAtPurchase || 0;
+
+                        const newCostPerPiece = item.unit === 'Carton'
+                            ? purchaseRate / piecesPerCtn
+                            : purchaseRate;
+
+                        product.costPricePerPiece   = newCostPerPiece;
+                        product.costPricePerCarton  = newCostPerPiece * piecesPerCtn;
+
+                        product.lastPurchasePricePerCarton = newCostPerPiece * piecesPerCtn;
+                        product.lastPurchasePricePerPiece  = newCostPerPiece;
+
+                        product.stockInPieces = (product.stockInPieces || 0) + newQtyPieces;
+                        await product.save();
+                    }
+                }
+
+                // Update Supplier & Ledger
+                const supplierDoc = await Supplier.findById(supplier);
+                if (supplierDoc) {
+                    supplierDoc.totalPurchases += grandTotal;
+                    supplierDoc.totalPaid += paidAmount;
+                    supplierDoc.outstandingPayable += balanceAmount;
+                    await supplierDoc.save();
+
+                    await addLedgerEntry({
+                        entityType: 'Supplier',
+                        entityId: supplier,
+                        transactionType: 'Purchase',
+                        referenceId: savedPurchase._id,
+                        credit: grandTotal,
+                        description: `Purchase - Ref: ${savedPurchase._id} (Bulk)`,
+                        date: purchaseDate
+                    });
+
+                    if (paidAmount > 0) {
+                        await addLedgerEntry({
+                            entityType: 'Supplier',
+                            entityId: supplier,
+                            transactionType: 'Payment',
+                            referenceId: savedPurchase._id,
+                            debit: paidAmount,
+                            description: `Payment for Purchase - Ref: ${savedPurchase._id} (Bulk)`,
+                            date: purchaseDate
+                        });
+                    }
+                }
+
+                results.push({ status: 'success', purchase: savedPurchase });
+            } catch (err) {
+                results.push({ status: 'error', message: err.message, input: purchData });
+            }
+        }
+
+        res.status(201).json({ results });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
