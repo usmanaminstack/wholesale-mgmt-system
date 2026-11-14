@@ -1,4 +1,4 @@
-# Guddu Traders — Wholesale Management System
+# Suriya Enterprises — Wholesale Management System
 ## Final Consultant Presentation
 ### Roman Urdu | Professional Analysis | July 2026
 
@@ -28,11 +28,11 @@
 
 ### Project ka Overview
 
-**Guddu Traders Wholesale Management System** ek internal business management software hai jo ek cold drink wholesale company ke liye banaya gaya hai. Is system ka maqsad manual register-keeping ko digital banana aur business operations ko streamline karna hai.
+**Suriya Enterprises Wholesale Management System** ek internal business management software hai jo ek cold drink wholesale company ke liye banaya gaya hai. Is system ka maqsad manual register-keeping ko digital banana aur business operations ko streamline karna hai.
 
 | Item | Detail |
 |---|---|
-| **Business Name** | Guddu Traders |
+| **Business Name** | Suriya Enterprises |
 | **Business Type** | Cold Drink Wholesale |
 | **Software Type** | Internal ERP (Single User) |
 | **Deployment** | Railway (Backend) + Vercel (Frontend) |
@@ -227,7 +227,7 @@ graph TD
 
 ```mermaid
 mindmap
-  root((Guddu\nTraders\nERP))
+  root((SURIYA'S\nENTERPRISES\nERP))
     Inventory
       Product Management
       Stock Tracking
@@ -447,7 +447,7 @@ graph LR
 ### Cash Flow ka Real Example
 
 ```
-Aaj ka din — Guddu Traders:
+Aaj ka din — Suriya Enterprises:
 
 MONEY IN:
   Cash Sale (Ali ko Pepsi)    : PKR  25,000
@@ -1099,7 +1099,7 @@ quadrantChart
 ```
 Is project ke baare mein ek line mein:
 
-"Guddu Traders ka yeh system ek behtareen MVP hai jisme 
+"Suriya Enterprises ka yeh system ek behtareen MVP hai jisme 
  zaroori business features hain, lekin ise production mein 
  daalne se pehle security aur data integrity ke kuch critical 
  issues fix karne chahiye."
@@ -1127,7 +1127,7 @@ Is project ke baare mein ek line mein:
 
 ```mermaid
 timeline
-    title Guddu Traders ERP — Future Roadmap
+    title Suriya Enterprises ERP — Future Roadmap
     section 2026 Q3
         Security Fix : JWT Auth aur Login
         Bug Fixes    : Ledger duplicate + validation
@@ -1152,7 +1152,7 @@ timeline
 
 ### Vision Statement
 
-> **"Guddu Traders se shuru ho kar, yeh system ek din Pakistan ke wholesale sector ka standard ERP ban sakta hai. Abhi yeh ek business ke liye bana hai, lekin iska architecture aur feature set isko aasan tareeqe se scale karne deta hai."**
+> **"Suriya Enterprises se shuru ho kar, yeh system ek din Pakistan ke wholesale sector ka standard ERP ban sakta hai. Abhi yeh ek business ke liye bana hai, lekin iska architecture aur feature set isko aasan tareeqe se scale karne deta hai."**
 
 ### Recommended Next Steps (Action Plan)
 
@@ -1219,5 +1219,5 @@ timeline
 
 *Document prepared by: Antigravity AI Consultant*  
 *Date: July 9, 2026*  
-*Project: Guddu Traders Wholesale Management System*  
+*Project: Suriya Enterprises Wholesale Management System*  
 *Version: 1.0 — Complete Analysis*

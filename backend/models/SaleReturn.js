@@ -6,7 +6,7 @@ const saleReturnSchema = mongoose.Schema({
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
         quantity: { type: Number, required: true },
-        unit: { type: String, enum: ['Carton', 'Piece'], required: true },
+        unit: { type: String, enum: ['Piece'], default: 'Piece' },
         priceAtReturn: { type: Number, required: true }
     }],
     totalRefundAmount: { type: Number, required: true },

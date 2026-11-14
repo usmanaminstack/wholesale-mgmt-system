@@ -458,186 +458,257 @@ label {
     to { transform: translateY(0); }
 }
 
-/* POS Receipt Styles (Modern World-Class Standard) */
+/* ===== A4 Professional Invoice Styles (High-Readability, High-Contrast) ===== */
 .pos-receipt {
   width: 100%;
-  max-width: 420px;
+  max-width: 800px;
+  min-height: 1020px;
   margin: 0 auto;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #000000;
   background: #ffffff;
-  padding: 40px 30px;
-  border-radius: 4px; /* Classic receipt paper look */
-  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-  line-height: 1.5;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Subtle thermal paper texture effect */
-.pos-receipt::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), 
-              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.03;
-  pointer-events: none;
+  padding: 40px;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border: 1px solid #d1d5db;
+  line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .pos-receipt-header {
-  text-align: center;
-  margin-bottom: 30px;
-  border-bottom: 2px solid #000;
-  padding-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #000000;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.pos-receipt-company {
+  flex: 1;
 }
 
 .pos-receipt-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
-  color: #000;
-  letter-spacing: -0.5px;
-  margin-bottom: 8px;
+  color: #000000;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
   text-transform: uppercase;
 }
 
 .pos-receipt-subtitle {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
+  color: #1f2937;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #4b5563;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .pos-receipt-contact {
   font-size: 12px;
-  color: #374151;
+  color: #111827;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+.pos-receipt-meta-box {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.pos-receipt-doc-badge {
+  display: inline-block;
+  background: #000000;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 6px 16px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
 .pos-receipt-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 20px 0;
-  padding: 15px 0;
-  border-bottom: 1px dashed #9ca3af;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pos-billing-card {
+  background: #ffffff;
+  border: 1px solid #000000;
+  padding: 12px 16px;
+}
+
+.pos-billing-title {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #000000;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
 }
 
 .pos-receipt-info-item {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.pos-receipt-info-item:last-child {
+  margin-bottom: 0;
 }
 
 .pos-receipt-info-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
   text-transform: uppercase;
-  margin-bottom: 2px;
 }
 
 .pos-receipt-info-value {
   font-size: 13px;
   font-weight: 700;
-  color: #000;
+  color: #000000;
 }
 
 .pos-receipt-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 20px 0;
+  margin-bottom: 24px;
+  border: 1.5px solid #000000;
 }
 
 .pos-receipt-table th {
-  text-align: left;
-  font-size: 11px;
+  background: #f3f4f6;
+  font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
-  color: #000;
-  padding: 10px 0;
-  border-bottom: 2px solid #000;
+  color: #000000;
+  padding: 10px 12px;
+  border: 1px solid #000000;
 }
 
 .pos-receipt-table td {
-  padding: 12px 0;
-  border-bottom: 1px solid #f3f4f6;
-  vertical-align: top;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  color: #000000;
+  vertical-align: middle;
 }
 
 .pos-item-name {
   font-weight: 700;
-  font-size: 14px;
-  color: #000;
-  display: block;
+  font-size: 13px;
+  color: #000000;
 }
 
-.pos-item-qty-price {
+.pos-receipt-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+  align-items: stretch;
+}
+
+.pos-signature-box {
+  border: 1px solid #000000;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 180px;
+}
+
+.pos-sig-label {
   font-size: 12px;
-  color: #4b5563;
-  font-weight: 500;
-  margin-top: 2px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+.pos-sig-line-area {
+  border-top: 1.5px solid #000000;
+  padding-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #000000;
+  text-transform: uppercase;
 }
 
 .pos-total-section {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 2px solid #000;
+  background: #ffffff;
+  border: 1.5px solid #000000;
+  padding: 16px 20px;
 }
 
 .pos-total-row {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  align-items: center;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 10px;
-  color: #374151;
+  margin-bottom: 8px;
+  color: #111827;
+}
+
+.pos-total-row span:last-child {
+  font-weight: 800;
+  color: #000000;
 }
 
 .pos-net-total {
-  margin-top: 15px;
-  padding: 15px 0;
-  border-top: 1px dashed #9ca3af;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  padding-bottom: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .pos-net-total span:first-child {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
-  color: #000;
+  color: #000000;
+  text-transform: uppercase;
 }
 
 .pos-net-total span:last-child {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 900;
-  color: #000;
+  color: #000000;
 }
 
 .pos-status-badge {
   display: block;
   text-align: center;
-  padding: 10px;
-  border: 2px solid #000;
-  border-radius: 0;
-  font-size: 14px;
+  padding: 8px;
+  border: 1.5px solid #000000;
+  font-size: 13px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .pos-footer {
   text-align: center;
   font-size: 11px;
-  margin-top: 40px;
-  color: #6b7280;
-  font-weight: 600;
-  border-top: 1px dashed #d1d5db;
-  padding-top: 20px;
+  margin-top: 36px;
+  color: #374151;
+  font-weight: 700;
+  border-top: 1px solid #000000;
+  padding-top: 12px;
 }
 
 /* ===== Keyboard Shortcut Hints ===== */

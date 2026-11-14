@@ -21,7 +21,7 @@ const Purchases = () => {
         supplier: '',
         paymentType: 'Cash',
         paidAmount: 0,
-        items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }],
+        items: [{ product: '', quantity: 1, unit: 'Piece', costAtPurchase: 0, totalCost: 0 }],
         purchaseDate: getLocalDateString()
     });
 
@@ -91,9 +91,9 @@ const Purchases = () => {
             purchaseDate: p.purchaseDate ? getLocalDateString(new Date(p.purchaseDate)) : getLocalDateString(),
             items: p.items.map(item => ({
                 product: item.product?._id || item.product,
-                quantity: item.quantity || item.quantityInCartons || 0,
-                unit: item.unit || 'Carton',
-                costAtPurchase: item.costAtPurchase || item.costPerCarton || 0,
+                quantity: item.quantity || 0,
+                unit: 'Piece',
+                costAtPurchase: item.costAtPurchase || 0,
                 totalCost: item.totalCost || 0
             }))
         });
@@ -112,7 +112,7 @@ const Purchases = () => {
     const addItem = () => {
         setFormData(prev => ({
             ...prev,
-            items: [...prev.items, { product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }]
+            items: [...prev.items, { product: '', quantity: 1, unit: 'Piece', costAtPurchase: 0, totalCost: 0 }]
         }));
     };
 
@@ -127,9 +127,9 @@ const Purchases = () => {
 
         const p = products.find(prod => prod._id === newItems[index].product);
         
-        if (field === 'product' || field === 'unit') {
+        if (field === 'product') {
             if (p) {
-                newItems[index].costAtPurchase = newItems[index].unit === 'Carton' ? (p.costPricePerCarton || p.pricePerCarton) : (p.costPricePerPiece || p.pricePerPiece);
+                newItems[index].costAtPurchase = p.costPricePerPiece || p.pricePerPiece || 0;
             }
         }
 
@@ -139,7 +139,7 @@ const Purchases = () => {
 
         // Auto-add next row when last row gets a product selected
         if (field === 'product' && value && index === newItems.length - 1) {
-            newItems.push({ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 });
+            newItems.push({ product: '', quantity: 1, unit: 'Piece', costAtPurchase: 0, totalCost: 0 });
             updatedFormData.items = newItems;
         }
 
@@ -164,7 +164,7 @@ const Purchases = () => {
     };
 
     const resetForm = () => {
-        setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Carton', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() });
+        setFormData({ supplier: '', paymentType: 'Cash', paidAmount: 0, items: [{ product: '', quantity: 1, unit: 'Piece', costAtPurchase: 0, totalCost: 0 }], purchaseDate: getLocalDateString() });
     };
 
     const handleSubmit = async (e) => {
@@ -341,18 +341,8 @@ const Purchases = () => {
                                                 required={index === 0 || !!item.product}
                                             />
                                         </div>
-                                        <div className="item-unit">
-                                            <label>UNIT</label>
-                                            <select
-                                                value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)}
-                                                style={{ padding: '10px', fontWeight: '700' }}
-                                            >
-                                                <option value="Carton">Ctn</option>
-                                                <option value="Piece">Pcs</option>
-                                            </select>
-                                        </div>
                                         <div className="item-qty">
-                                            <label>QTY</label>
+                                            <label>QTY (PCS)</label>
                                             <input
                                                 type="number" min="1" required={!!item.product}
                                                 value={item.quantity} onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))}
@@ -361,7 +351,7 @@ const Purchases = () => {
                                             />
                                         </div>
                                         <div className="item-rate">
-                                            <label>COST RATE</label>
+                                            <label>COST/PC</label>
                                             <input
                                                 type="number" required={!!item.product}
                                                 value={item.costAtPurchase} onChange={e => handleItemChange(index, 'costAtPurchase', parseFloat(e.target.value))}
@@ -432,7 +422,7 @@ const Purchases = () => {
                 }
                 .purchase-item-row {
                     display: grid; 
-                    grid-template-columns: 3fr 1fr 1fr 1.5fr 1.5fr 44px; 
+                    grid-template-columns: 3fr 1fr 1.5fr 1.5fr 44px; 
                     gap: 12px; 
                     align-items: end;
                     backgroundColor: white;
@@ -491,7 +481,7 @@ const Purchases = () => {
                         padding: 16px !important;
                     }
                     .item-product { grid-column: span 2; }
-                    .item-unit, .item-qty { grid-column: span 1; }
+                    .item-qty { grid-column: span 1; }
                     .item-rate, .item-total { grid-column: span 1; }
                     .item-remove { 
                         grid-column: span 2; 

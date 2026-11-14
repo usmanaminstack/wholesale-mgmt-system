@@ -76,7 +76,7 @@ const Layout = () => {
                             <div style={{ width: '36px', height: '36px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
                                 <img src={logo} alt="Logo" style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
                             </div>
-                            <h2 className="brand-font" style={{ fontSize: '1.25rem', fontWeight: '950', margin: 0, color: 'var(--text)', letterSpacing: '-0.04em' }}>GUDDU <span style={{ color: 'var(--primary)' }}>TRADERS</span></h2>
+                            <h2 className="brand-font" style={{ fontSize: '1.25rem', fontWeight: '950', margin: 0, color: 'var(--text)', letterSpacing: '-0.04em' }}>SURIYA'S <span style={{ color: 'var(--primary)' }}>ENTERPRISES</span></h2>
                         </div>
                     </div>
 

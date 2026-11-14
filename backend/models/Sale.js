@@ -5,8 +5,8 @@ const saleSchema = mongoose.Schema({
     customerName: { type: String }, // For guest/retail customers
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-        quantity: { type: Number, required: true }, // in pieces or cartons? I'll handle unit in the controller
-        unit: { type: String, enum: ['Carton', 'Piece'], required: true },
+        quantity: { type: Number, required: true },
+        unit: { type: String, enum: ['Piece'], default: 'Piece' },
         costAtSale: { type: Number, default: 0 },
         priceAtSale: { type: Number, required: true },
         totalPrice: { type: Number, required: true }

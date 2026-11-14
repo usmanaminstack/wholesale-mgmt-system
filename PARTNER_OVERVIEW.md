@@ -1,11 +1,11 @@
-# Guddu Traders — Wholesale Management System
+# Suriya Enterprises — Wholesale Management System
 ### Complete Project Overview for Partners / Collaborators
 
 ---
 
 ## 1. What is This System?
 
-This is a **full-stack web-based wholesale management system** built specifically for a trading business ("Guddu Traders"). It digitizes day-to-day wholesale operations — inventory, buying & selling, customer/supplier accounts, payments, expenses, and financial reporting — all in one place.
+This is a **full-stack web-based wholesale management system** built specifically for a trading business ("Suriya Enterprises"). It digitizes day-to-day wholesale operations — inventory, buying & selling, customer/supplier accounts, payments, expenses, and financial reporting — all in one place.
 
 **Business Purpose:** Replace manual registers / spreadsheets with a live, accurate system that tracks money in, money out, stock levels, and profit in real time.
 
@@ -246,7 +246,7 @@ Running balance is calculated per entity using the previous balance.
 ### Backend — Railway
 - Deployed via `railway.json` with NIXPACKS builder
 - Start command: `node index.js`
-- Health check at `/` → returns `{ status: 'active', message: 'Guddu Traders API is running' }`
+- Health check at `/` → returns `{ status: 'active', message: 'Suriya Enterprises API is running' }`
 - Environment variables needed:
   - `MONGODB_URI` — MongoDB Atlas connection string
   - `PORT` — Auto-set by Railway

@@ -80,7 +80,7 @@ const Dashboard = () => {
                 await api.delete(`/cash/adjustments/${id}`);
                 fetchData();
                 fetchAdjustments();
-            } catch (err) {}
+            } catch (err) { }
         }
     };
 
@@ -102,21 +102,21 @@ const Dashboard = () => {
             try {
                 await api.delete(endpoint);
                 fetchData();
-            } catch (err) {}
+            } catch (err) { }
         }
     };
 
     if (loading) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-            <div className="loader" style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)' }}>Guddu Traders...</div>
+            <div className="loader" style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)' }}>Suriya Enterprises...</div>
         </div>
     );
 
     const StatCard = ({ title, value, icon: Icon, color, trend, bg }) => (
-        <div className="card" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '12px', 
+        <div className="card" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
             borderLeft: `6px solid ${color}`,
             background: bg || 'white'
         }}>
@@ -150,10 +150,10 @@ const Dashboard = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }} className="page-header">
                 <div>
                     <h1 style={{ fontSize: 'var(--h1-size, 2rem)', fontWeight: '900', letterSpacing: '-0.025em', marginBottom: '4px', color: 'var(--text)' }}>
-                        <span style={{ color: 'var(--primary)' }}>Guddu</span> Traders
+                        <span style={{ color: 'var(--primary)' }}>SURIYA'S</span> ENTERPRISES
                     </h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                        <Activity size={14} color="var(--primary)" /> Premium Cold Drink Wholesale
+                        <Activity size={14} color="var(--primary)" /> Mobile Accessories wholesale & Retail
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -184,9 +184,9 @@ const Dashboard = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
-                <div className="card" style={{ 
-                    background: 'linear-gradient(135deg, var(--sidebar-bg) 0%, #1e293b 100%)', 
-                    color: 'white', 
+                <div className="card" style={{
+                    background: 'linear-gradient(135deg, var(--sidebar-bg) 0%, #1e293b 100%)',
+                    color: 'white',
                     border: 'none',
                     padding: '32px',
                     position: 'relative',
@@ -205,9 +205,9 @@ const Dashboard = () => {
                     <Wallet size={120} style={{ position: 'absolute', right: '-20px', bottom: '-20px', color: 'rgba(255,255,255,0.05)' }} />
                 </div>
 
-                <div className="card" style={{ 
-                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', 
-                    color: 'white', 
+                <div className="card" style={{
+                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                    color: 'white',
                     border: 'none',
                     padding: '32px',
                     position: 'relative',
@@ -284,11 +284,11 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="card" style={{ 
-                    background: 'var(--bg)', 
-                    padding: '32px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
+                <div className="card" style={{
+                    background: 'var(--bg)',
+                    padding: '32px',
+                    display: 'flex',
+                    flexDirection: 'column',
                     justifyContent: 'center',
                     border: '2px dashed var(--border)',
                     textAlign: 'center'
@@ -402,11 +402,11 @@ const Dashboard = () => {
                                 <tr key={adj._id}>
                                     <td>{formatDate(adj.adjustmentDate)}</td>
                                     <td>
-                                        <span style={{ 
-                                            fontSize: '0.75rem', 
-                                            fontWeight: '800', 
-                                            padding: '4px 8px', 
-                                            borderRadius: '6px', 
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: '800',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
                                             backgroundColor: adj.accountType === 'Cash' ? '#fef3c7' : '#e0f2fe',
                                             color: adj.accountType === 'Cash' ? '#92400e' : '#0369a1'
                                         }}>

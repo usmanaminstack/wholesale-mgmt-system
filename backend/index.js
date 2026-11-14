@@ -48,7 +48,9 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Health Check (Responsive immediately)
-app.get('/', (req, res) => res.json({ status: 'active', message: 'Guddu Traders API is running' }));
+app.get('/', (req, res) => res.json({
+    status: 'active', message: 'Suriya Enterprises API is running'
+}));
 
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));

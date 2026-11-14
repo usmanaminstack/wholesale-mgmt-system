@@ -28,7 +28,7 @@ const BulkSales = () => {
             {
                 id: Date.now() + Math.random() + 1,
                 product: '',
-                unit: 'Carton',
+                unit: 'Piece',
                 quantity: 1,
                 priceAtSale: 0,
                 totalPrice: 0
@@ -78,12 +78,12 @@ const BulkSales = () => {
                 "Customer ID or Name": sampleCustomer?._id || sampleCustomer?.name || "Customer ID or Name",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
-                "Unit (Carton/Piece)": "Carton",
+                "Unit": "Piece",
                 "Quantity": 10,
-                "Price Per Unit": sampleProd1?.pricePerCarton || 1250,
+                "Price Per Unit": sampleProd1?.pricePerPiece || 650,
                 "Discount": 0,
                 "Payment Type (Cash/Credit)": "Cash",
-                "Received Amount": (sampleProd1?.pricePerCarton || 1250) * 10,
+                "Received Amount": (sampleProd1?.pricePerPiece || 650) * 10,
                 "Note": "Order Morning"
             },
             {
@@ -91,12 +91,12 @@ const BulkSales = () => {
                 "Customer ID or Name": sampleCustomer?._id || sampleCustomer?.name || "Customer ID or Name",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product ID or Name": sampleProd2?._id || sampleProd2?.name || "Product ID or Name",
-                "Unit (Carton/Piece)": "Carton",
+                "Unit": "Piece",
                 "Quantity": 5,
-                "Price Per Unit": sampleProd2?.pricePerCarton || 1500,
+                "Price Per Unit": sampleProd2?.pricePerPiece || 950,
                 "Discount": 0,
                 "Payment Type (Cash/Credit)": "Cash",
-                "Received Amount": (sampleProd2?.pricePerCarton || 1500) * 5,
+                "Received Amount": (sampleProd2?.pricePerPiece || 950) * 5,
                 "Note": "Order Morning"
             },
             {
@@ -104,12 +104,12 @@ const BulkSales = () => {
                 "Customer ID or Name": "Walk-in Customer",
                 "Sale Date (YYYY-MM-DD)": getLocalDateString(),
                 "Product ID or Name": sampleProd1?._id || sampleProd1?.name || "Product ID or Name",
-                "Unit (Carton/Piece)": "Piece",
+                "Unit": "Piece",
                 "Quantity": 12,
-                "Price Per Unit": sampleProd1?.pricePerPiece || 110,
+                "Price Per Unit": sampleProd1?.pricePerPiece || 650,
                 "Discount": 20,
                 "Payment Type (Cash/Credit)": "Cash",
-                "Received Amount": ((sampleProd1?.pricePerPiece || 110) * 12) - 20,
+                "Received Amount": ((sampleProd1?.pricePerPiece || 650) * 12) - 20,
                 "Note": "Evening Separate Bill"
             }
         ];
@@ -126,9 +126,8 @@ const BulkSales = () => {
         const productsReference = products.map(p => ({
             "Product ID": p._id,
             "Product Name": p.name,
-            "Price Per Carton": p.pricePerCarton || 0,
             "Price Per Piece": p.pricePerPiece || 0,
-            "Pieces Per Carton": p.piecesPerCarton || 1
+            "Cost Per Piece": p.costPricePerPiece || 0
         }));
 
         const wb = XLSX.utils.book_new();
@@ -253,13 +252,13 @@ const BulkSales = () => {
                         notFoundProducts++;
                     }
 
-                    const unitRaw = String(row["Unit (Carton/Piece)"] ?? row["Unit"] ?? "Carton").toLowerCase().includes('piece') ? 'Piece' : 'Carton';
+                    const unitRaw = 'Piece';
                     const qtyRaw = parseFloat(row["Quantity"] ?? row["Qty"] ?? 1) || 1;
 
                     // Automatically fill Sale Price from matched product if blank or not in file
                     let priceRaw = parseFloat(row["Price Per Unit"] ?? row["Price"] ?? row["Rate"]);
                     if ((isNaN(priceRaw) || priceRaw <= 0) && matchedProduct) {
-                        priceRaw = unitRaw === 'Carton' ? (matchedProduct.pricePerCarton || 0) : (matchedProduct.pricePerPiece || 0);
+                        priceRaw = matchedProduct.pricePerPiece || 0;
                     }
                     if (isNaN(priceRaw)) priceRaw = 0;
 
@@ -370,7 +369,7 @@ const BulkSales = () => {
                     {
                         id: Date.now() + Math.random(),
                         product: '',
-                        unit: 'Carton',
+                        unit: 'Piece',
                         quantity: 1,
                         priceAtSale: 0,
                         totalPrice: 0
@@ -408,12 +407,10 @@ const BulkSales = () => {
                 if (item.id !== itemId) return item;
                 const updatedItem = { ...item, [field]: value };
 
-                if (field === 'product' || field === 'unit') {
-                    const prodId = field === 'product' ? value : item.product;
-                    const prod = products.find(p => p._id === prodId);
+                if (field === 'product') {
+                    const prod = products.find(p => p._id === value);
                     if (prod) {
-                        const targetUnit = field === 'unit' ? value : item.unit;
-                        updatedItem.priceAtSale = targetUnit === 'Carton' ? (prod.pricePerCarton || 0) : (prod.pricePerPiece || 0);
+                        updatedItem.priceAtSale = prod.pricePerPiece || 0;
                     }
                 }
 
@@ -778,14 +775,9 @@ const BulkSales = () => {
                                                         />
                                                     </td>
                                                     <td>
-                                                        <select
-                                                            value={item.unit}
-                                                            onChange={e => updateBillItem(bill.id, item.id, 'unit', e.target.value)}
-                                                            style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1.5px solid var(--border)', fontWeight: '700' }}
-                                                        >
-                                                            <option value="Carton">Carton</option>
-                                                            <option value="Piece">Piece</option>
-                                                        </select>
+                                                        <span style={{ padding: '4px 8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800' }}>
+                                                            Pcs
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <input

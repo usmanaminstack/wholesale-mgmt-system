@@ -26,32 +26,19 @@ exports.createPurchase = async (req, res) => {
 
         const savedPurchase = await purchase.save();
 
-        // Update Stock & Cost — always use the actual new purchase price
-        // so that costAtSale on the next sale exactly matches what was paid
+        // Update Stock & Cost — piece level tracking
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesPerCtn  = product.piecesPerCarton || 1;
-                const qty           = item.quantity || 0;
-                const newQtyPieces  = item.unit === 'Carton' ? qty * piecesPerCtn : qty;
-                const purchaseRate  = item.costAtPurchase || 0;  // cost per carton or per piece
+                const qty = item.quantity || 0;
+                const purchaseRate = item.costAtPurchase || 0;
 
-                // ── Cost per piece from this purchase ──────────────────────
-                const newCostPerPiece = item.unit === 'Carton'
-                    ? purchaseRate / piecesPerCtn
-                    : purchaseRate;
+                // Always set product cost to latest purchase price
+                product.costPricePerPiece = purchaseRate;
+                product.lastPurchasePricePerPiece = purchaseRate;
 
-                // ── Always set product cost to latest purchase price ───────
-                // This ensures costAtSale == actual purchase cost on next sale
-                product.costPricePerPiece   = newCostPerPiece;
-                product.costPricePerCarton  = newCostPerPiece * piecesPerCtn;
-
-                // ── Last purchase price fields ─────────────────────────────
-                product.lastPurchasePricePerCarton = newCostPerPiece * piecesPerCtn;
-                product.lastPurchasePricePerPiece  = newCostPerPiece;
-
-                // ── Stock update ───────────────────────────────────────────
-                product.stockInPieces = (product.stockInPieces || 0) + newQtyPieces;
+                // Stock update in pieces
+                product.stockInPieces = (product.stockInPieces || 0) + qty;
                 await product.save();
             }
         }
@@ -134,9 +121,8 @@ exports.updatePurchase = async (req, res) => {
         for (const item of originalPurchase.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces -= piecesToReduce;
+                const qty = item.quantity || 0;
+                product.stockInPieces -= qty;
                 await product.save();
             }
         }
@@ -157,24 +143,16 @@ exports.updatePurchase = async (req, res) => {
         }
         const balanceAmount = grandTotal - paidAmount;
 
-        // 4. Apply New Stock & Cost — always use actual new purchase price
+        // 4. Apply New Stock & Cost
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const piecesPerCtn  = product.piecesPerCarton || 1;
-                const qty           = item.quantity || 0;
-                const newQtyPieces  = item.unit === 'Carton' ? qty * piecesPerCtn : qty;
-                const purchaseRate  = item.costAtPurchase || 0;
+                const qty = item.quantity || 0;
+                const purchaseRate = item.costAtPurchase || 0;
 
-                const newCostPerPiece = item.unit === 'Carton'
-                    ? purchaseRate / piecesPerCtn
-                    : purchaseRate;
-
-                product.costPricePerPiece          = newCostPerPiece;
-                product.costPricePerCarton         = newCostPerPiece * piecesPerCtn;
-                product.lastPurchasePricePerCarton = newCostPerPiece * piecesPerCtn;
-                product.lastPurchasePricePerPiece  = newCostPerPiece;
-                product.stockInPieces = (product.stockInPieces || 0) + newQtyPieces;
+                product.costPricePerPiece = purchaseRate;
+                product.lastPurchasePricePerPiece = purchaseRate;
+                product.stockInPieces = (product.stockInPieces || 0) + qty;
                 await product.save();
             }
         }
@@ -234,24 +212,21 @@ exports.deletePurchase = async (req, res) => {
         const purchase = await Purchase.findById(req.params.id);
         if (!purchase) return res.status(404).json({ message: 'Purchase not found' });
 
-        // 1. Revert Stock & Adjust Average Cost
+        // 1. Revert Stock & Adjust Cost
         for (const item of purchase.items) {
             const product = await Product.findById(item.product);
             if (product) {
                 const currentQty = product.stockInPieces || 0;
                 const currentCost = product.costPricePerPiece || 0;
-                
-                const piecesPerCtn = product.piecesPerCarton || 1;
-                const removeQty = item.unit === 'Carton' ? (item.quantity * piecesPerCtn) : item.quantity;
-                const removeValue = item.totalCost;
+                const removeQty = item.quantity || 0;
+                const removeValue = item.totalCost || 0;
 
                 const newQty = currentQty - removeQty;
                 if (newQty > 0) {
                     const newValue = (currentQty * currentCost) - removeValue;
-                    product.costPricePerPiece = newValue / newQty;
-                    product.costPricePerCarton = product.costPricePerPiece * piecesPerCtn;
+                    product.costPricePerPiece = Math.max(0, newValue / newQty);
                 }
-                product.stockInPieces = newQty;
+                product.stockInPieces = Math.max(0, newQty);
                 await product.save();
             }
         }
@@ -317,22 +292,12 @@ exports.createBulkPurchases = async (req, res) => {
                 for (const item of items) {
                     const product = await Product.findById(item.product);
                     if (product) {
-                        const piecesPerCtn  = product.piecesPerCarton || 1;
-                        const qty           = item.quantity || 0;
-                        const newQtyPieces  = item.unit === 'Carton' ? qty * piecesPerCtn : qty;
-                        const purchaseRate  = item.costAtPurchase || 0;
+                        const qty = item.quantity || 0;
+                        const purchaseRate = item.costAtPurchase || 0;
 
-                        const newCostPerPiece = item.unit === 'Carton'
-                            ? purchaseRate / piecesPerCtn
-                            : purchaseRate;
-
-                        product.costPricePerPiece   = newCostPerPiece;
-                        product.costPricePerCarton  = newCostPerPiece * piecesPerCtn;
-
-                        product.lastPurchasePricePerCarton = newCostPerPiece * piecesPerCtn;
-                        product.lastPurchasePricePerPiece  = newCostPerPiece;
-
-                        product.stockInPieces = (product.stockInPieces || 0) + newQtyPieces;
+                        product.costPricePerPiece = purchaseRate;
+                        product.lastPurchasePricePerPiece = purchaseRate;
+                        product.stockInPieces = (product.stockInPieces || 0) + qty;
                         await product.save();
                     }
                 }

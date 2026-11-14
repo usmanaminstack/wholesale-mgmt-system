@@ -15,10 +15,7 @@ const Inventory = () => {
     const [formData, setFormData] = useState({
         name: '',
         category: '',
-        piecesPerCarton: '',
-        costPricePerCarton: '',
         costPricePerPiece: '',
-        pricePerCarton: '',
         pricePerPiece: '',
         customerProductName: '',
         lowStockThreshold: 10
@@ -29,10 +26,7 @@ const Inventory = () => {
         setFormData({
             name: p.name,
             category: p.category,
-            piecesPerCarton: p.piecesPerCarton,
-            costPricePerCarton: p.costPricePerCarton || (p.pricePerCarton * 0.9),
-            costPricePerPiece: p.costPricePerPiece || (p.pricePerPiece * 0.9),
-            pricePerCarton: p.pricePerCarton,
+            costPricePerPiece: p.costPricePerPiece || 0,
             pricePerPiece: p.pricePerPiece,
             customerProductName: p.customerProductName || '',
             lowStockThreshold: p.lowStockThreshold
@@ -82,7 +76,7 @@ const Inventory = () => {
             else await api.post('/products', formData);
             setShowModal(false);
             setEditingProduct(null);
-            setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', customerProductName: '', lowStockThreshold: 10 });
+            setFormData({ name: '', category: '', costPricePerPiece: '', pricePerPiece: '', customerProductName: '', lowStockThreshold: 10 });
             fetchProducts();
         } catch (err) { alert(err.message); }
     };
@@ -107,7 +101,7 @@ const Inventory = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
-                        onClick={() => { setEditingProduct(null); setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', lowStockThreshold: 10 }); setShowModal(true); }}
+                        onClick={() => { setEditingProduct(null); setFormData({ name: '', category: '', costPricePerPiece: '', pricePerPiece: '', customerProductName: '', lowStockThreshold: 10 }); setShowModal(true); }}
                         className="primary desktop-only"
                         style={{ padding: '14px 28px', borderRadius: '14px' }}
                     >
@@ -116,7 +110,7 @@ const Inventory = () => {
                 </div>
             </div>
 
-            <button data-testid="add-product-fab" onClick={() => { setEditingProduct(null); setFormData({ name: '', category: '', piecesPerCarton: '', costPricePerCarton: '', costPricePerPiece: '', pricePerCarton: '', pricePerPiece: '', lowStockThreshold: 10 }); setShowModal(true); }} className="fab-button mobile-only" title="Add Product">
+            <button data-testid="add-product-fab" onClick={() => { setEditingProduct(null); setFormData({ name: '', category: '', costPricePerPiece: '', pricePerPiece: '', customerProductName: '', lowStockThreshold: 10 }); setShowModal(true); }} className="fab-button mobile-only" title="Add Product">
                 <Plus size={32} />
             </button>
 
@@ -183,31 +177,29 @@ const Inventory = () => {
                                                     {p.isActive === false && (
                                                         <span style={{ fontSize: '0.65rem', padding: '2px 8px', backgroundColor: '#f1f5f9', color: 'var(--text-muted)', borderRadius: '6px', fontWeight: '900', textTransform: 'uppercase' }}>Inactive</span>
                                                     )}
-                                                    {(!p.costPricePerCarton || p.costPricePerCarton <= 0) && (
+                                                    {(!p.costPricePerPiece || p.costPricePerPiece <= 0) && (
                                                         <span title="Missing Cost Price" style={{ color: 'var(--danger)', display: 'flex' }}><AlertTriangle size={14} /></span>
                                                     )}
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                                                     <span style={{ padding: '2px 8px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '800' }}>{p.category}</span>
-                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>{p.piecesPerCarton} Pcs/Ctn</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td data-label="Cost" className="desktop-only">
                                         <div style={{ fontSize: '0.85rem' }}>
-                                            <div style={{ color: 'var(--accent)', fontWeight: '800' }} title="Average Cost">
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>AVG:</span> {p.costPricePerCarton?.toLocaleString()}
+                                            <div style={{ color: 'var(--accent)', fontWeight: '800' }} title="Cost Per Piece">
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>COST/PC:</span> {p.costPricePerPiece?.toLocaleString()}
                                             </div>
                                             <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: '600' }}>
-                                                LAST: {p.lastPurchasePricePerCarton?.toLocaleString() || '—'}
+                                                LAST: {p.lastPurchasePricePerPiece?.toLocaleString() || '—'}
                                             </div>
                                         </div>
                                     </td>
                                     <td data-label="Price">
                                         <div style={{ fontSize: '0.85rem' }}>
-                                            <div style={{ fontWeight: '800' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>CTN:</span> {p.pricePerCarton?.toLocaleString()}</div>
-                                            <div style={{ fontWeight: '600', color: 'var(--text-muted)' }}><span style={{ fontSize: '0.7rem' }}>PCS:</span> {p.pricePerPiece?.toLocaleString()}</div>
+                                            <div style={{ fontWeight: '800' }}><span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>PRICE/PC:</span> {p.pricePerPiece?.toLocaleString()}</div>
                                         </div>
                                     </td>
                                     <td data-label="Stock">
@@ -221,9 +213,6 @@ const Inventory = () => {
                                                 fontSize: '1rem'
                                             }}>
                                                 {p.stockInPieces} {p.stockInPieces <= p.lowStockThreshold && <AlertTriangle size={16} />}
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700' }}>
-                                                ≈ {p.piecesPerCarton ? (p.stockInPieces / p.piecesPerCarton).toFixed(1) : 0} Cartons
                                             </div>
                                         </div>
                                     </td>
@@ -260,15 +249,11 @@ const Inventory = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div style={{ gridColumn: 'span 2' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>PRODUCT NAME</label>
-                            <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Coca Cola 1.5L" />
+                            <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. iPhone 20W Fast Charger" />
                         </div>
-                        <div>
+                        <div style={{ gridColumn: 'span 2' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>CATEGORY</label>
-                            <input type="text" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="Soft Drink" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>PCS PER CARTON</label>
-                            <input type="number" required value={formData.piecesPerCarton} onChange={(e) => setFormData({ ...formData, piecesPerCarton: e.target.value })} />
+                            <input type="text" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="e.g. Chargers, Cables, Handsfree, Covers" />
                         </div>
                         <div style={{ gridColumn: 'span 2' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>CUSTOMER FACING NAME (FOR INVOICE)</label>
@@ -276,29 +261,17 @@ const Inventory = () => {
                         </div>
                         <div style={{ gridColumn: 'span 2', backgroundColor: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)' }}>
                             <h4 style={{ margin: '0 0 16px 0', fontSize: '0.9rem', fontWeight: '800', color: 'var(--primary)' }}>Purchasing & Cost</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>COST (CTN)</label>
-                                    <input type="number" placeholder="0" required value={formData.costPricePerCarton} onChange={e => setFormData({ ...formData, costPricePerCarton: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>COST (PC)</label>
-                                    <input type="number" placeholder="0" required value={formData.costPricePerPiece} onChange={e => setFormData({ ...formData, costPricePerPiece: e.target.value })} />
-                                </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>COST PER PIECE (PKR)</label>
+                                <input type="number" placeholder="0" required value={formData.costPricePerPiece} onChange={e => setFormData({ ...formData, costPricePerPiece: e.target.value })} />
                             </div>
                         </div>
 
                         <div style={{ gridColumn: 'span 2', backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '16px', border: '1px solid #bbf7d0' }}>
-                            <h4 style={{ margin: '0 0 16px 0', fontSize: '0.9rem', fontWeight: '800', color: '#166534' }}>Selling Prices</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#166534', marginBottom: '6px', display: 'block' }}>SALE (CTN)</label>
-                                    <input type="number" placeholder="0" required value={formData.pricePerCarton} onChange={e => setFormData({ ...formData, pricePerCarton: e.target.value })} style={{ border: '2px solid #bbf7d0' }} />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#166534', marginBottom: '6px', display: 'block' }}>SALE (PC)</label>
-                                    <input type="number" placeholder="0" required value={formData.pricePerPiece} onChange={e => setFormData({ ...formData, pricePerPiece: e.target.value })} style={{ border: '2px solid #bbf7d0' }} />
-                                </div>
+                            <h4 style={{ margin: '0 0 16px 0', fontSize: '0.9rem', fontWeight: '800', color: '#166534' }}>Selling Price</h4>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#166534', marginBottom: '6px', display: 'block' }}>SALE PRICE PER PIECE (PKR)</label>
+                                <input type="number" placeholder="0" required value={formData.pricePerPiece} onChange={e => setFormData({ ...formData, pricePerPiece: e.target.value })} style={{ border: '2px solid #bbf7d0' }} />
                             </div>
                         </div>
                         <div style={{ gridColumn: 'span 2' }}>

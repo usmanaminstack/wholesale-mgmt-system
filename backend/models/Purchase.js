@@ -5,8 +5,8 @@ const purchaseSchema = mongoose.Schema({
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
         quantity: { type: Number, required: true },
-        unit: { type: String, enum: ['Carton', 'Piece'], default: 'Carton' },
-        costAtPurchase: { type: Number, required: true }, // Price per unit (ctn or piece)
+        unit: { type: String, enum: ['Piece'], default: 'Piece' },
+        costAtPurchase: { type: Number, required: true }, // Price per piece
         totalCost: { type: Number, required: true }
     }],
     grandTotal: { type: Number, required: true },

@@ -122,7 +122,7 @@ const Customers = () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(22);
-        doc.text('GUDDU TRADERS', pageW / 2, 16, { align: 'center' });
+        doc.text('Suriya Enterprises', pageW / 2, 16, { align: 'center' });
 
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
@@ -233,7 +233,7 @@ const Customers = () => {
             doc.text(String(rowNo), colPos.no, currentY + 5.5);
             doc.text(formatDate(entry.date), colPos.date, currentY + 5.5);
             doc.text(entry.transactionType.toUpperCase(), colPos.type, currentY + 5.5);
-            
+
             // Limit description to 60 characters to avoid overlapping
             const desc = (entry.description || '—').substring(0, 48);
             doc.text(desc, colPos.desc, currentY + 5.5);

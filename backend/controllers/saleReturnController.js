@@ -21,13 +21,12 @@ exports.createReturn = async (req, res) => {
 
         const savedReturn = await saleReturn.save();
 
-        // 1. Update Stock (Increase for returned items)
+        // 1. Update Stock (Increase for returned pieces)
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToAdd = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces += piecesToAdd;
+                const qty = item.quantity || 0;
+                product.stockInPieces += qty;
                 await product.save();
             }
         }
@@ -71,16 +70,12 @@ exports.deleteReturn = async (req, res) => {
         const saleReturn = await SaleReturn.findById(req.params.id);
         if (!saleReturn) return res.status(404).json({ message: 'Return not found' });
 
-        const sale = await Sale.findById(saleReturn.saleId);
-        // We revert even if the original sale was deleted, as stock was added back during return creation
-
         // 1. Revert Stock (Decrease stock that was added back during return)
         for (const item of saleReturn.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToRemove = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces -= piecesToRemove;
+                const qty = item.quantity || 0;
+                product.stockInPieces -= qty;
                 await product.save();
             }
         }

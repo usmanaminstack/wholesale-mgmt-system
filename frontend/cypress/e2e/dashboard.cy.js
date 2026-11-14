@@ -5,10 +5,10 @@ describe('Dashboard Mobile UX', () => {
   });
 
   it('should display the dashboard with correct responsive layout', () => {
-    cy.get('h1').contains('Guddu Traders').should('be.visible');
+    cy.get('h1').contains('Suriya Enterprises').should('be.visible');
     // Check for stat grid cards
     cy.get('.stat-grid .card').should('have.length.at.least', 3);
-    
+
     // Verify profit display is visible
     cy.contains('Net Profit').should('be.visible');
     cy.get('h2').contains('PKR').should('be.visible');

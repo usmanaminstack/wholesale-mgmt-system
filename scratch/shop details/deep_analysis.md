@@ -1,5 +1,5 @@
 # Wholesale Management System — Deep Analysis
-### Guddu Traders | Phase 3–14 Complete Documentation
+### Suriya Enterprises | Phase 3–14 Complete Documentation
 
 ---
 

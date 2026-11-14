@@ -130,10 +130,6 @@ const SearchableSelect = ({ options, value, onChange, placeholder, labelField = 
     // Format stock display for products
     const getStockLabel = (opt) => {
         if (opt.stockInPieces !== undefined) {
-            const cartons = opt.piecesPerCarton ? Math.floor(opt.stockInPieces / opt.piecesPerCarton) : 0;
-            const loosePcs = opt.piecesPerCarton ? opt.stockInPieces % opt.piecesPerCarton : opt.stockInPieces;
-            if (cartons > 0 && loosePcs > 0) return `${cartons}ctn + ${loosePcs}pcs`;
-            if (cartons > 0) return `${cartons} ctn`;
             return `${opt.stockInPieces} pcs`;
         }
         if (opt.outstandingReceivable !== undefined) {

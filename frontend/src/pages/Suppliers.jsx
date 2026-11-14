@@ -61,7 +61,7 @@ const Suppliers = () => {
             setPaymentData({ amount: '', method: 'Cash', note: '', paymentDate: getLocalDateString() });
             fetchLedger(selectedSupplier._id);
             fetchSuppliers();
-        } catch (err) {}
+        } catch (err) { }
     };
 
     const handleDeletePayment = async (id) => {
@@ -70,7 +70,7 @@ const Suppliers = () => {
                 await api.delete(`/payments/${id}`);
                 fetchSuppliers();
                 fetchLedger(selectedSupplier._id);
-            } catch (err) {}
+            } catch (err) { }
         }
     };
 
@@ -80,7 +80,7 @@ const Suppliers = () => {
                 await api.delete(`/purchases/${id}`);
                 fetchSuppliers();
                 fetchLedger(selectedSupplier._id);
-            } catch (err) {}
+            } catch (err) { }
         }
     };
 
@@ -122,7 +122,7 @@ const Suppliers = () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(22);
-        doc.text('GUDDU TRADERS', pageW / 2, 16, { align: 'center' });
+        doc.text('Suriya Enterprises', pageW / 2, 16, { align: 'center' });
 
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
@@ -156,13 +156,13 @@ const Suppliers = () => {
 
         // Column positions
         const colPos = {
-            no:   startX + 2,
+            no: startX + 2,
             date: startX + 8,
             type: startX + 32,
             desc: startX + 52,
             bill: startX + 124,
-            pay:  startX + 154,
-            bal:  startX + usableW - 2
+            pay: startX + 154,
+            bal: startX + usableW - 2
         };
 
         const drawTableHeader = (y) => {
@@ -171,13 +171,13 @@ const Suppliers = () => {
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.text('#',            colPos.no,   y + 5.5);
-            doc.text('DATE',         colPos.date,  y + 5.5);
-            doc.text('TYPE',         colPos.type,  y + 5.5);
-            doc.text('DESCRIPTION',  colPos.desc,  y + 5.5);
+            doc.text('#', colPos.no, y + 5.5);
+            doc.text('DATE', colPos.date, y + 5.5);
+            doc.text('TYPE', colPos.type, y + 5.5);
+            doc.text('DESCRIPTION', colPos.desc, y + 5.5);
             doc.text('PURCHASE (CR)', colPos.bill, y + 5.5, { align: 'right' });
-            doc.text('PAID (DR)',     colPos.pay,  y + 5.5, { align: 'right' });
-            doc.text('BALANCE',      colPos.bal,  y + 5.5, { align: 'right' });
+            doc.text('PAID (DR)', colPos.pay, y + 5.5, { align: 'right' });
+            doc.text('BALANCE', colPos.bal, y + 5.5, { align: 'right' });
         };
 
         currentY = 82;
@@ -196,7 +196,7 @@ const Suppliers = () => {
         });
 
         // Back-calculate the starting balance
-        const totalDebits  = sortedLedger.reduce((sum, e) => sum + (e.debit  || 0), 0);
+        const totalDebits = sortedLedger.reduce((sum, e) => sum + (e.debit || 0), 0);
         const totalCredits = sortedLedger.reduce((sum, e) => sum + (e.credit || 0), 0);
         // For supplier: credit = purchase (increases payable), debit = payment (decreases payable)
         let runningBal = (selectedSupplier?.outstandingPayable || 0) + totalDebits - totalCredits;
@@ -299,12 +299,12 @@ const Suppliers = () => {
                 <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#f8fafc' }}>
                     <div style={{ position: 'relative', flex: 1, maxWidth: '500px' }}>
                         <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                        <input 
-                            type="text" 
-                            placeholder="Search by company name..." 
-                            value={searchTerm} 
-                            onChange={e => setSearchTerm(e.target.value)} 
-                            style={{ padding: '12px 12px 12px 48px', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '0.95rem' }} 
+                        <input
+                            type="text"
+                            placeholder="Search by company name..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            style={{ padding: '12px 12px 12px 48px', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '0.95rem' }}
                         />
                     </div>
                 </div>

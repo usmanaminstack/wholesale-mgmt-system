@@ -73,22 +73,22 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       >
         <div style={{ padding: '0 24px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ 
-              width: '48px', 
-              height: '48px', 
-              borderRadius: '14px', 
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '14px',
               background: 'white',
-              display: 'flex', 
-              alignItems: 'center', 
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
               overflow: 'hidden'
             }}>
-              <img src={logo} alt="Guddu Trader Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={logo} alt="SURIYA'S Trader Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <h1 className="brand-font" style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '-0.025em', color: 'white', margin: 0, lineHeight: 1 }}>GUDDU</h1>
-              <span className="brand-font" style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.15em', marginTop: '2px' }}>TRADERS</span>
+              <h1 className="brand-font" style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '-0.025em', color: 'white', margin: 0, lineHeight: 1 }}>SURIYA'S</h1>
+              <span className="brand-font" style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.15em', marginTop: '2px' }}>ENTERPRISES</span>
             </div>
           </div>
           <button onClick={toggleSidebar} className="mobile-only" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '8px', borderRadius: '10px' }}>

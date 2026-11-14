@@ -1,6 +1,6 @@
 # Wholesale Management System — Project Overview
 
-> **Codebase**: `wholesale-mgmt-system` | **Business Name**: Guddu Traders  
+> **Codebase**: `wholesale-mgmt-system` | **Business Name**: Suriya Enterprises  
 > **Documentation Type**: Architecture & Structure Analysis
 
 ---
@@ -222,7 +222,7 @@ Production:   $VITE_API_BASE_URL (env variable → Railway URL)
 - The `Layout.jsx` header hardcodes the text `"Admin"` as the user label (static, not dynamic).
 - CORS is configured to allow `localhost` and Vercel origins, providing minimal network-level restriction.
 
-**Implication**: This is an **internal-use, single-user system** designed for a single business (Guddu Traders) with the assumption that only trusted parties access it.
+**Implication**: This is an **internal-use, single-user system** designed for a single business (Suriya Enterprises) with the assumption that only trusted parties access it.
 
 ---
 

@@ -39,7 +39,7 @@ const Sales = () => {
         isRetail: true,
         previousBalance: 0,
         saleDate: getLocalDateString(),
-        items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
+        items: [{ product: '', quantity: 1, unit: 'Piece', priceAtSale: 0, totalPrice: 0 }]
     });
 
     const [startDate, setStartDate] = useState(getLocalDateString());
@@ -55,7 +55,7 @@ const Sales = () => {
         try {
             const saved = JSON.parse(localStorage.getItem('recentCustomerIds') || '[]');
             setRecentCustomerIds(saved);
-        } catch (e) {}
+        } catch (e) { }
     }, []);
 
     // Global keyboard shortcuts when modal is open
@@ -114,7 +114,7 @@ const Sales = () => {
     const addItem = () => {
         setFormData(prev => ({
             ...prev,
-            items: [...prev.items, { product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }]
+            items: [...prev.items, { product: '', quantity: 1, unit: 'Piece', priceAtSale: 0, totalPrice: 0 }]
         }));
     };
 
@@ -129,10 +129,9 @@ const Sales = () => {
 
         const p = products.find(prod => prod._id === newItems[index].product);
         if (p) {
-            if (field === 'product' || field === 'unit') {
-                newItems[index].priceAtSale = newItems[index].unit === 'Carton' ? p.pricePerCarton : p.pricePerPiece;
+            if (field === 'product') {
+                newItems[index].priceAtSale = p.pricePerPiece || 0;
             }
-            // Recalculate total for this item
             newItems[index].totalPrice = newItems[index].quantity * (newItems[index].priceAtSale || 0);
         }
 
@@ -140,7 +139,7 @@ const Sales = () => {
 
         // Auto-add next row when last row gets a product selected
         if (field === 'product' && value && index === newItems.length - 1) {
-            newItems.push({ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 });
+            newItems.push({ product: '', quantity: 1, unit: 'Piece', priceAtSale: 0, totalPrice: 0 });
             updatedFormData.items = newItems;
         }
 
@@ -200,7 +199,7 @@ const Sales = () => {
     };
 
     const resetForm = () => {
-        setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Carton', priceAtSale: 0, totalPrice: 0 }] });
+        setFormData({ customer: '', customerName: '', phone: '', address: '', saveAsCustomer: false, paymentType: 'Cash', receivedAmount: 0, discount: 0, isRetail: true, previousBalance: 0, saleDate: getLocalDateString(), items: [{ product: '', quantity: 1, unit: 'Piece', priceAtSale: 0, totalPrice: 0 }] });
     };
 
     const handleSubmit = async (e) => {
@@ -247,68 +246,130 @@ const Sales = () => {
         }
     };
 
-    const handleShare = async (saleToShare = lastCreatedInvoice) => {
-        if (!saleToShare) return;
+    const downloadPDF = async (sale = selectedSale) => {
+        const targetSale = sale || selectedSale;
+        if (!targetSale) return;
 
-        // Force render receipt if not visible
-        if (!selectedSale || selectedSale._id !== saleToShare._id) setSelectedSale(saleToShare);
-        if (!showViewModal) setShowViewModal(true);
+        if (!selectedSale || selectedSale._id !== targetSale._id) {
+            setSelectedSale(targetSale);
+        }
+        setShowViewModal(true);
 
         setTimeout(async () => {
             const element = document.getElementById('receipt-print-area');
             if (!element) {
-                toast.error("Could not prepare receipt for sharing.");
+                toast.error("Preparing invoice... please try again.");
                 return;
             }
 
+            const loadingToast = toast.loading("Generating A4 PDF...");
             try {
-                toast.loading("Preparing PDF...", { id: 'share-loading' });
-                const canvas = await html2canvas(element, { scale: 3, useCORS: true });
-                const imgData = canvas.toDataURL('image/png');
-                const pdfWidth = 80;
-                const imgProps = canvas.width / canvas.height;
-                const pdfHeight = pdfWidth / imgProps;
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: -window.scrollY
+                });
 
-                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfWidth, pdfHeight + 10] });
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pdfWidth = 210;
+                const pdfHeight = 297;
+                const margin = 10;
+                const printWidth = pdfWidth - (margin * 2);
+                const printHeight = (canvas.height * printWidth) / canvas.width;
+
+                if (printHeight <= (pdfHeight - (margin * 2))) {
+                    pdf.addImage(imgData, 'JPEG', margin, margin, printWidth, printHeight);
+                } else {
+                    const scaleFactor = (pdfHeight - (margin * 2)) / printHeight;
+                    pdf.addImage(imgData, 'JPEG', margin, margin, printWidth * scaleFactor, printHeight * scaleFactor);
+                }
+
+                pdf.save(`Invoice-${targetSale._id.slice(-6).toUpperCase()}.pdf`);
+                toast.success("A4 PDF Downloaded!", { id: loadingToast });
+            } catch (err) {
+                console.error("PDF generation failed:", err);
+                toast.error("Could not generate PDF.", { id: loadingToast });
+            }
+        }, 500);
+    };
+
+    const handleShare = async (saleToShare = lastCreatedInvoice || selectedSale) => {
+        const targetSale = saleToShare || selectedSale;
+        if (!targetSale) return;
+
+        if (!selectedSale || selectedSale._id !== targetSale._id) {
+            setSelectedSale(targetSale);
+        }
+        setShowViewModal(true);
+
+        setTimeout(async () => {
+            const element = document.getElementById('receipt-print-area');
+            if (!element) {
+                toast.error("Preparing receipt for sharing...");
+                return;
+            }
+
+            const loadingToast = toast.loading("Preparing PDF...", { id: 'share-loading' });
+            try {
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: -window.scrollY
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pdfWidth = 210;
+                const pdfHeight = 297;
+                const margin = 10;
+                const printWidth = pdfWidth - (margin * 2);
+                const printHeight = (canvas.height * printWidth) / canvas.width;
+
+                if (printHeight <= (pdfHeight - (margin * 2))) {
+                    pdf.addImage(imgData, 'JPEG', margin, margin, printWidth, printHeight);
+                } else {
+                    const scaleFactor = (pdfHeight - (margin * 2)) / printHeight;
+                    pdf.addImage(imgData, 'JPEG', margin, margin, printWidth * scaleFactor, printHeight * scaleFactor);
+                }
+
                 const pdfBlob = pdf.output('blob');
-                const file = new File([pdfBlob], `receipt-${saleToShare._id.slice(-6)}.pdf`, { type: 'application/pdf' });
+                const file = new File([pdfBlob], `Invoice-${targetSale._id.slice(-6).toUpperCase()}.pdf`, { type: 'application/pdf' });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
-                        title: `Invoice #${saleToShare._id.slice(-6).toUpperCase()}`,
-                        text: `Invoice from Guddu Traders for PKR ${saleToShare.totalAmount.toLocaleString()}`
+                        title: `Invoice #${targetSale._id.slice(-6).toUpperCase()}`,
+                        text: `Invoice from Suriya Enterprises for PKR ${targetSale.totalAmount.toLocaleString()}`
                     });
-                    toast.success("Shared successfully!", { id: 'share-loading' });
+                    toast.success("Shared successfully!", { id: loadingToast });
                 } else {
-                    // Fallback to link share if file share not supported
-                    const shareText = `Invoice #${saleToShare._id.slice(-6).toUpperCase()} from Guddu Traders for PKR ${saleToShare.totalAmount.toLocaleString()}`;
-                    await navigator.share({
-                        title: 'Invoice from Guddu Traders',
-                        text: shareText,
-                        url: window.location.href,
-                    });
-                    toast.success("Shared link!", { id: 'share-loading' });
+                    // Fallback to direct download
+                    pdf.save(`Invoice-${targetSale._id.slice(-6).toUpperCase()}.pdf`);
+                    toast.success("PDF Downloaded!", { id: loadingToast });
                 }
             } catch (err) {
                 console.error('Error sharing:', err);
-                toast.error("Sharing failed.", { id: 'share-loading' });
+                toast.error("Sharing failed.", { id: loadingToast });
             }
         }, 500);
     };
 
     const printInvoice = (sale = selectedSale) => {
-        if (!sale) return;
-        if (!selectedSale || selectedSale._id !== sale._id) {
-            setSelectedSale(sale);
+        const targetSale = sale || selectedSale;
+        if (!targetSale) return;
+        if (!selectedSale || selectedSale._id !== targetSale._id) {
+            setSelectedSale(targetSale);
         }
         setShowViewModal(true);
-        
+
         setTimeout(() => {
             window.print();
-        }, 800); // Increased delay for mobile
+        }, 800);
     };
 
     const handleDeleteSale = async (id) => {
@@ -323,11 +384,11 @@ const Sales = () => {
     };
 
     const downloadPNG = async (sale = selectedSale) => {
-        if (!sale) return;
-        
-        // Ensure the correct sale is selected and visible
-        if (!selectedSale || selectedSale._id !== sale._id) {
-            setSelectedSale(sale);
+        const targetSale = sale || selectedSale;
+        if (!targetSale) return;
+
+        if (!selectedSale || selectedSale._id !== targetSale._id) {
+            setSelectedSale(targetSale);
         }
         setShowViewModal(true);
 
@@ -337,16 +398,16 @@ const Sales = () => {
                 toast.error("Preparing receipt... please try again.");
                 return;
             }
+            const loadingToast = toast.loading("Generating clear image...");
             try {
-                const loadingToast = toast.loading("Generating high-quality image...");
-                
-                const canvas = await html2canvas(element, { 
-                    scale: 3, 
+                const canvas = await html2canvas(element, {
+                    scale: 2,
                     useCORS: true,
                     backgroundColor: '#ffffff',
-                    windowWidth: 420
+                    scrollX: 0,
+                    scrollY: -window.scrollY
                 });
-                
+
                 canvas.toBlob((blob) => {
                     if (!blob) {
                         toast.error("Failed to generate image.", { id: loadingToast });
@@ -355,24 +416,22 @@ const Sales = () => {
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = `receipt-${sale._id.slice(-6).toUpperCase()}.png`;
-                    
+                    link.download = `Invoice-${targetSale._id.slice(-6).toUpperCase()}.png`;
                     document.body.appendChild(link);
                     link.click();
-                    
+
                     setTimeout(() => {
                         document.body.removeChild(link);
                         URL.revokeObjectURL(url);
                     }, 200);
-                    
-                    toast.success("Image saved!", { id: loadingToast });
-                }, 'image/png');
 
+                    toast.success("Image saved to downloads!", { id: loadingToast });
+                }, 'image/png');
             } catch (error) {
                 console.error("Could not generate PNG", error);
-                toast.error("Failed to generate image.");
+                toast.error("Failed to generate image.", { id: loadingToast });
             }
-        }, 800);
+        }, 500);
     };
 
     // Recent customers as quick-pick chips
@@ -531,9 +590,9 @@ const Sales = () => {
                                     value={formData.customer}
                                     onChange={e => {
                                         const c = customers.find(cust => cust._id === e.target.value);
-                                        setFormData({ 
-                                            ...formData, 
-                                            customer: e.target.value, 
+                                        setFormData({
+                                            ...formData,
+                                            customer: e.target.value,
                                             customerName: c ? c.name : '',
                                             previousBalance: c ? (c.outstandingReceivable || 0) : 0,
                                             phone: c ? c.phone : formData.phone,
@@ -592,13 +651,6 @@ const Sales = () => {
                                             placeholder="-- Choose Product --"
                                             required={index === 0 || item.product}
                                         />
-                                    </div>
-                                    <div className="inv-unit">
-                                        <label>Unit</label>
-                                        <select value={item.unit} onChange={e => handleItemChange(index, 'unit', e.target.value)} >
-                                            <option value="Carton">Cartons</option>
-                                            <option value="Piece">Pieces</option>
-                                        </select>
                                     </div>
                                     <div className="inv-qty">
                                         <label>Qty</label>
@@ -703,61 +755,108 @@ const Sales = () => {
                 </form>
             </Modal>
 
-            <Modal isOpen={showViewModal && !!selectedSale} onClose={() => setShowViewModal(false)} maxWidth="500px">
-                <div className="no-print" style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    marginBottom: '24px', 
-                    position: 'sticky', 
-                    top: 0, 
-                    backgroundColor: 'white', 
-                    zIndex: 10, 
+            <Modal isOpen={showViewModal && !!selectedSale} onClose={() => setShowViewModal(false)} maxWidth="860px">
+                <div className="no-print" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    position: 'sticky',
+                    top: 0,
+                    backgroundColor: 'white',
+                    zIndex: 10,
                     paddingBottom: '16px',
-                    borderBottom: '1px solid #f1f5f9',
+                    borderBottom: '1px solid #e2e8f0',
                     flexWrap: 'wrap',
-                    gap: '12px'
+                    gap: '10px'
                 }}>
-                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>Invoice Receipt</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>A4 Invoice Preview</h3>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button onClick={() => printInvoice(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Print / PDF"><Printer size={20} /></button>
-                        <button onClick={() => downloadPNG(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Download PNG"><Download size={20} /></button>
-                        <button onClick={() => handleShare(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '12px' }} title="Share"><Share2 size={20} /></button>
-                        <button onClick={() => setShowViewModal(false)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px 14px', borderRadius: '12px' }} title="Close"><X size={20} /></button>
+                        <button onClick={() => downloadPDF(selectedSale)} style={{ background: '#0f172a', color: '#ffffff', padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.85rem' }} title="Download A4 PDF"><Download size={18} /> Download PDF</button>
+                        <button onClick={() => printInvoice(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.85rem' }} title="Print / PDF"><Printer size={18} /> Print</button>
+                        <button onClick={() => downloadPNG(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.85rem' }} title="Download Image"><Eye size={18} /> Image</button>
+                        <button onClick={() => handleShare(selectedSale)} style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '10px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.85rem' }} title="Share"><Share2 size={18} /> Share</button>
+                        <button onClick={() => setShowViewModal(false)} style={{ background: '#fef2f2', color: 'var(--danger)', padding: '10px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer' }} title="Close"><X size={18} /></button>
                     </div>
                 </div>
 
                 <div id="receipt-print-area" className="pos-receipt" data-testid="pos-receipt">
                     <div className="pos-receipt-header">
-                        <h1 className="pos-receipt-title">GUDDU TRADERS</h1>
-                        <div className="pos-receipt-subtitle">Premium Wholesale & Retail Shop</div>
-                        <div className="pos-receipt-contact">
-                            Arooba corner shop no 3, near mazedar haleem <br />
-                            Phone: 0331-1485725 | 0330-1398956
+                        <div className="pos-receipt-company">
+                            <h1 className="pos-receipt-title">Suriya Enterprises</h1>
+                            <div className="pos-receipt-subtitle">Mobile Accessories & Wholesale Distributors</div>
+                            <div className="pos-receipt-contact">
+                                Plot No. 792, Block 3, F.B. Area, Karachi <br />
+                                <strong>Phone:</strong> 0320-8265765
+                            </div>
+                        </div>
+                        <div className="pos-receipt-meta-box">
+                            <div className="pos-receipt-doc-badge">INVOICE</div>
+                            <div style={{ fontSize: '13px', fontWeight: '800', color: '#000000', marginBottom: '2px' }}>
+                                #{selectedSale?._id.slice(-6).toUpperCase()}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#374151', fontWeight: '700' }}>
+                                Date: {selectedSale && formatDate(selectedSale.saleDate)}
+                            </div>
+                            <div style={{ marginTop: '4px' }}>
+                                <span style={{
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #000000',
+                                    backgroundColor: '#ffffff',
+                                    color: '#000000',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '800'
+                                }}>
+                                    {selectedSale?.isRetail ? 'Retail Sale' : 'Wholesale Sale'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     <div className="pos-receipt-info-grid">
-                        <div className="pos-receipt-info-item">
-                            <span className="pos-receipt-info-label">Invoice No</span>
-                            <span className="pos-receipt-info-value">#{selectedSale?._id.slice(-6).toUpperCase()}</span>
+                        <div className="pos-billing-card">
+                            <div className="pos-billing-title">BILLED TO (CUSTOMER)</div>
+                            <div className="pos-receipt-info-item">
+                                <span className="pos-receipt-info-label">Customer Name:</span>
+                                <span className="pos-receipt-info-value">{selectedSale?.customer?.name || selectedSale?.customerName || 'WALK-IN GUEST'}</span>
+                            </div>
+                            <div className="pos-receipt-info-item">
+                                <span className="pos-receipt-info-label">Phone:</span>
+                                <span className="pos-receipt-info-value">{selectedSale?.customer?.phone || selectedSale?.phone || 'N/A'}</span>
+                            </div>
+                            <div className="pos-receipt-info-item">
+                                <span className="pos-receipt-info-label">Address:</span>
+                                <span className="pos-receipt-info-value">{selectedSale?.customer?.address || selectedSale?.address || 'Karachi'}</span>
+                            </div>
                         </div>
-                        <div className="pos-receipt-info-item">
-                            <span className="pos-receipt-info-label">Date</span>
-                            <span className="pos-receipt-info-value">{selectedSale && formatDate(selectedSale.saleDate)}</span>
-                        </div>
-                        <div className="pos-receipt-info-item" style={{ gridColumn: 'span 2' }}>
-                            <span className="pos-receipt-info-label">Customer</span>
-                            <span className="pos-receipt-info-value">{selectedSale?.customer?.name || selectedSale?.customerName || 'WALK-IN GUEST'}</span>
+
+                        <div className="pos-billing-card">
+                            <div className="pos-billing-title">INVOICE & PAYMENT DETAILS</div>
+                            <div className="pos-receipt-info-item">
+                                <span className="pos-receipt-info-label">Invoice Date:</span>
+                                <span className="pos-receipt-info-value">{selectedSale && formatDate(selectedSale.saleDate)}</span>
+                            </div>
+                            <div className="pos-receipt-info-item">
+                                <span className="pos-receipt-info-label">Payment Method:</span>
+                                <span className="pos-receipt-info-value">{selectedSale?.paymentType}</span>
+                            </div>
+                            <div className="pos-receipt-info-item">
+                                <span className="pos-receipt-info-label">Invoice Status:</span>
+                                <span className="pos-receipt-info-value" style={{ color: (selectedSale?.balanceAmount || 0) > 0 ? '#b91c1c' : '#15803d' }}>
+                                    {(selectedSale?.balanceAmount || 0) > 0 ? 'BALANCE DUE' : 'PAID IN FULL'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     <table className="pos-receipt-table">
                         <thead data-testid="receipt-header">
                             <tr>
-                                <th style={{ textAlign: 'left', width: '50%' }}>ITEM DESCRIPTION</th>
-                                <th style={{ textAlign: 'center', width: '20%' }}>QTY</th>
-                                <th style={{ textAlign: 'right', width: '30%' }}>TOTAL</th>
+                                <th style={{ textAlign: 'left', width: '45%' }}>ITEM DESCRIPTION</th>
+                                <th style={{ textAlign: 'center', width: '15%' }}>QTY</th>
+                                <th style={{ textAlign: 'right', width: '20%' }}>PRICE (PKR)</th>
+                                <th style={{ textAlign: 'right', width: '20%' }}>TOTAL (PKR)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -765,12 +864,15 @@ const Sales = () => {
                                 <tr key={idx}>
                                     <td style={{ textAlign: 'left' }}>
                                         <span className="pos-item-name">{item.product?.name || 'Item'}</span>
-                                        <div className="pos-item-qty-price">
-                                            {item.priceAtSale.toLocaleString()} x {item.unit}
-                                        </div>
+                                        {item.product?.customerProductName && item.product.customerProductName !== item.product.name && (
+                                            <div style={{ fontSize: '11px', color: '#4b5563' }}>({item.product.customerProductName})</div>
+                                        )}
                                     </td>
                                     <td style={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: '700' }}>
-                                        {item.quantity}
+                                        {item.quantity} Pcs
+                                    </td>
+                                    <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '700' }}>
+                                        {item.priceAtSale.toLocaleString()}
                                     </td>
                                     <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: '800' }}>
                                         {item.totalPrice.toLocaleString()}
@@ -780,57 +882,66 @@ const Sales = () => {
                         </tbody>
                     </table>
 
-                    <div className="pos-total-section">
-                        <div className="pos-total-row">
-                            <span>GROSS TOTAL</span>
-                            <span>{selectedSale?.totalAmount.toLocaleString()}</span>
-                        </div>
-                        {(selectedSale?.discount || 0) > 0 && (
-                            <div className="pos-total-row">
-                                <span>DISCOUNT</span>
-                                <span>-{selectedSale?.discount.toLocaleString()}</span>
+                    <div className="pos-receipt-bottom">
+                        <div className="pos-signature-box">
+                            <div className="pos-sig-label">Authorized Stamp & Signature:</div>
+                            <div style={{ flex: 1 }}></div>
+                            <div className="pos-sig-line-area">
+                                Suriya Enterprises
                             </div>
-                        )}
-                        <div className="pos-total-row" style={{ fontWeight: '800', color: '#000' }}>
-                            <span>NET INVOICE</span>
-                            <span>{(selectedSale?.totalAmount - (selectedSale?.discount || 0)).toLocaleString()}</span>
-                        </div>
-                        
-                        <div className="pos-total-row" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #ccc' }}>
-                            <span>PREVIOUS BALANCE</span>
-                            <span>{selectedSale?.previousBalance?.toLocaleString() || 0}</span>
-                        </div>
-                        
-                        <div className="pos-net-total">
-                            <span>GRAND TOTAL</span>
-                            <span>PKR {((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0))).toLocaleString()}</span>
                         </div>
 
-                        <div className="pos-total-row" style={{ marginTop: '10px' }}>
-                            <span>AMOUNT PAID</span>
-                            <span>{selectedSale?.receivedAmount.toLocaleString()}</span>
-                        </div>
-                        
-                        <div className="pos-status-badge" style={{
-                            borderColor: '#000',
-                            backgroundColor: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#fff' : '#000',
-                            color: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#000' : '#fff'
-                        }}>
-                            {((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 
-                                ? `REMAINING: PKR ${((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))).toLocaleString()}` 
-                                : 'FULLY PAID'}
+                        <div className="pos-total-section">
+                            <div className="pos-total-row">
+                                <span>Gross Total:</span>
+                                <span>PKR {selectedSale?.totalAmount.toLocaleString()}</span>
+                            </div>
+                            {(selectedSale?.discount || 0) > 0 && (
+                                <div className="pos-total-row" style={{ color: '#b91c1c' }}>
+                                    <span>Discount:</span>
+                                    <span>- PKR {selectedSale?.discount.toLocaleString()}</span>
+                                </div>
+                            )}
+                            <div className="pos-total-row" style={{ fontWeight: '800', color: '#000000' }}>
+                                <span>Net Invoice:</span>
+                                <span>PKR {(selectedSale?.totalAmount - (selectedSale?.discount || 0)).toLocaleString()}</span>
+                            </div>
+
+                            <div className="pos-total-row" style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed #9ca3af' }}>
+                                <span>Previous Balance:</span>
+                                <span>PKR {selectedSale?.previousBalance?.toLocaleString() || 0}</span>
+                            </div>
+
+                            <div className="pos-net-total">
+                                <span>Grand Total:</span>
+                                <span>PKR {((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0))).toLocaleString()}</span>
+                            </div>
+
+                            <div className="pos-total-row" style={{ marginTop: '6px' }}>
+                                <span>Amount Received:</span>
+                                <span>PKR {selectedSale?.receivedAmount.toLocaleString()}</span>
+                            </div>
+
+                            <div className="pos-status-badge" style={{
+                                backgroundColor: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#fef2f2' : '#f0fdf4',
+                                color: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#b91c1c' : '#15803d',
+                                borderColor: ((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0 ? '#b91c1c' : '#15803d'
+                            }}>
+                                {((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))) > 0
+                                    ? `BALANCE DUE: PKR ${((selectedSale?.previousBalance || 0) + (selectedSale?.totalAmount - (selectedSale?.discount || 0) - (selectedSale?.receivedAmount || 0))).toLocaleString()}`
+                                    : 'FULLY PAID'}
+                            </div>
                         </div>
                     </div>
 
                     <div className="pos-footer">
-                        <div style={{ fontWeight: '800', marginBottom: '4px' }}>THANK YOU FOR YOUR BUSINESS!</div>
-                        <div>Please keep this receipt for your records.</div>
-                        <div style={{ marginTop: '12px', fontSize: '9px', opacity: 0.6 }}>Software by Guddu Traders Management</div>
+                        <div>THANK YOU FOR CHOOSING SURIYA ENTERPRISES!</div>
+                        <div style={{ marginTop: '4px', fontSize: '10px', color: '#6b7280' }}>For inquiries or orders: Phone: 0320-8265765 | Computer Generated Sales Invoice</div>
                     </div>
                 </div>
             </Modal>
 
-            <Modal isOpen={showSuccessModal && !!lastCreatedInvoice} onClose={() => setShowSuccessModal(false)} maxWidth="400px">
+            <Modal isOpen={showSuccessModal && !!lastCreatedInvoice} onClose={() => setShowSuccessModal(false)} maxWidth="450px">
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#dcfce7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                         <CheckCircle2 size={48} />
@@ -838,15 +949,18 @@ const Sales = () => {
                     <h2 style={{ margin: '0 0 8px 0', fontWeight: '900' }}>Invoice Created!</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: '500' }}>Invoice #{lastCreatedInvoice?._id.slice(-6).toUpperCase()} has been saved successfully.</p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-                        <button onClick={() => { setShowSuccessModal(false); printInvoice(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                            <Printer size={22} /> Print
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
+                        <button onClick={() => { setShowSuccessModal(false); downloadPDF(lastCreatedInvoice); }} style={{ padding: '14px 6px', borderRadius: '14px', backgroundColor: '#0f172a', color: '#ffffff', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <Download size={20} /> PDF (A4)
                         </button>
-                        <button onClick={() => { setShowSuccessModal(false); downloadPNG(lastCreatedInvoice); }} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                            <Download size={22} /> Image
+                        <button onClick={() => { setShowSuccessModal(false); printInvoice(lastCreatedInvoice); }} style={{ padding: '14px 6px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <Printer size={20} /> Print
                         </button>
-                        <button onClick={() => handleShare(lastCreatedInvoice)} style={{ padding: '14px 8px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                            <Share2 size={22} /> Share
+                        <button onClick={() => { setShowSuccessModal(false); downloadPNG(lastCreatedInvoice); }} style={{ padding: '14px 6px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <Eye size={20} /> Image
+                        </button>
+                        <button onClick={() => { setShowSuccessModal(false); handleShare(lastCreatedInvoice); }} style={{ padding: '14px 6px', borderRadius: '14px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: '800', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            <Share2 size={20} /> Share
                         </button>
                     </div>
 
@@ -865,7 +979,7 @@ const Sales = () => {
                 }
                 .invoice-row {
                     display: grid; 
-                    grid-template-columns: 3fr 1.5fr 1fr 1.5fr 1.5fr 48px; 
+                    grid-template-columns: 3fr 1fr 1.5fr 1.5fr 48px; 
                     gap: 16px; 
                     align-items: end; 
                     background-color: white; 
@@ -958,13 +1072,36 @@ const Sales = () => {
                     fontSize: 1.2rem;
                 }
 
-               @media print {
-                body * { visibility: hidden; }
-                .pos-receipt, .pos-receipt * { visibility: visible; }
-                .pos-receipt { position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 20px !important; box-shadow: none !important; border: none !important; }
-                .no-print, .modal-overlay { display: none !important; }
-                .modal-content { background: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
-              }
+                @page {
+                    size: A4 portrait;
+                    margin: 10mm;
+                }
+
+                @media print {
+                    body * { visibility: hidden !important; }
+                    .pos-receipt, .pos-receipt * { visibility: visible !important; }
+                    .pos-receipt { 
+                        position: absolute !important; 
+                        left: 0 !important; 
+                        top: 0 !important; 
+                        width: 100% !important; 
+                        max-width: 100% !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important; 
+                        box-shadow: none !important; 
+                        border: none !important; 
+                        background: white !important;
+                    }
+                    .no-print, .modal-overlay, .fab-button, .page-header { display: none !important; }
+                    .modal-content { 
+                        background: none !important; 
+                        padding: 0 !important; 
+                        width: 100% !important; 
+                        max-width: 100% !important; 
+                        box-shadow: none !important;
+                        border: none !important;
+                    }
+                }
 
               @media (max-width: 768px) {
                 .sales-meta-grid { grid-template-columns: 1fr; }
@@ -974,7 +1111,7 @@ const Sales = () => {
                     padding: 16px !important; 
                 }
                 .inv-product { grid-column: span 2; }
-                .inv-unit, .inv-qty { grid-column: span 1; }
+                .inv-qty { grid-column: span 1; }
                 .inv-price, .inv-total { grid-column: span 1; }
                 .inv-total { border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 4px; grid-column: span 2; }
                 .inv-remove { grid-column: span 2; }

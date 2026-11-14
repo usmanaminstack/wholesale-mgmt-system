@@ -16,15 +16,7 @@ exports.createSale = async (req, res) => {
 
             let cost = 0;
             if (productDoc) {
-                const ppc = productDoc.piecesPerCarton || 1;
-                const cCost = productDoc.costPricePerCarton || 0;
-                const pCost = productDoc.costPricePerPiece || 0;
-
-                if (item.unit === 'Carton') {
-                    cost = cCost || (pCost * ppc);
-                } else {
-                    cost = pCost || (cCost / ppc);
-                }
+                cost = productDoc.costPricePerPiece || 0;
             }
             processedItems.push({ ...item, costAtSale: cost || 0 });
         }
@@ -59,13 +51,12 @@ exports.createSale = async (req, res) => {
 
         const savedSale = await sale.save();
 
-        // Update Stock
+        // Update Stock in Pieces
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces -= piecesToReduce;
+                const qty = item.quantity || 0;
+                product.stockInPieces -= qty;
                 await product.save();
             }
         }
@@ -148,9 +139,8 @@ exports.updateSale = async (req, res) => {
         for (const item of originalSale.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToAdd = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces += piecesToAdd;
+                const qty = item.quantity || 0;
+                product.stockInPieces += qty;
                 await product.save();
             }
         }
@@ -166,7 +156,7 @@ exports.updateSale = async (req, res) => {
             }
         }
 
-        // 3. Calculate New Totals & Robustly fetch costs
+        // 3. Calculate New Totals & fetch costs
         let totalAmount = 0;
         const processedItems = [];
         for (const item of items) {
@@ -175,15 +165,7 @@ exports.updateSale = async (req, res) => {
 
             let cost = 0;
             if (productDoc) {
-                const ppc = productDoc.piecesPerCarton || 1;
-                const cCost = productDoc.costPricePerCarton || 0;
-                const pCost = productDoc.costPricePerPiece || 0;
-
-                if (item.unit === 'Carton') {
-                    cost = cCost || (pCost * ppc);
-                } else {
-                    cost = pCost || (cCost / ppc);
-                }
+                cost = productDoc.costPricePerPiece || 0;
             }
             processedItems.push({ ...item, costAtSale: cost || 0 });
         }
@@ -205,9 +187,8 @@ exports.updateSale = async (req, res) => {
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces -= piecesToReduce;
+                const qty = item.quantity || 0;
+                product.stockInPieces -= qty;
                 await product.save();
             }
         }
@@ -277,9 +258,8 @@ exports.deleteSale = async (req, res) => {
         for (const item of sale.items) {
             const product = await Product.findById(item.product);
             if (product) {
-                const qty = item.quantity || item.quantityInCartons || 0;
-                const piecesToAdd = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                product.stockInPieces += piecesToAdd;
+                const qty = item.quantity || 0;
+                product.stockInPieces += qty;
                 await product.save();
             }
         }
@@ -334,15 +314,7 @@ exports.createBulkSales = async (req, res) => {
 
                     let cost = 0;
                     if (productDoc) {
-                        const ppc = productDoc.piecesPerCarton || 1;
-                        const cCost = productDoc.costPricePerCarton || 0;
-                        const pCost = productDoc.costPricePerPiece || 0;
-
-                        if (item.unit === 'Carton') {
-                            cost = cCost || (pCost * ppc);
-                        } else {
-                            cost = pCost || (cCost / ppc);
-                        }
+                        cost = productDoc.costPricePerPiece || 0;
                     }
                     processedItems.push({ ...item, costAtSale: cost || 0 });
                 }
@@ -380,9 +352,8 @@ exports.createBulkSales = async (req, res) => {
                 for (const item of items) {
                     const product = await Product.findById(item.product);
                     if (product) {
-                        const qty = item.quantity || item.quantityInCartons || 0;
-                        const piecesToReduce = item.unit === 'Carton' ? (qty * product.piecesPerCarton) : qty;
-                        product.stockInPieces -= piecesToReduce;
+                        const qty = item.quantity || 0;
+                        product.stockInPieces -= qty;
                         await product.save();
                     }
                 }

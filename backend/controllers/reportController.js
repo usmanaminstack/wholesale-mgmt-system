@@ -39,10 +39,7 @@ exports.getDashboardStats = async (req, res) => {
                     const prod = await Product.findById(item.product);
                     if (prod) {
                         source = 'Fallback';
-                        const ppc = prod.piecesPerCarton || 1;
-                        const cCost = prod.costPricePerCarton || 0;
-                        const pCost = prod.costPricePerPiece || 0;
-                        cost = item.unit === 'Carton' ? (cCost || pCost * ppc) : (pCost || cCost / ppc);
+                        cost = prod.costPricePerPiece || 0;
                     } else {
                         source = 'NotFound';
                     }
@@ -90,7 +87,6 @@ exports.getDashboardStats = async (req, res) => {
 
         // Find products with missing cost data
         const zeroCostProductsCount = await Product.countDocuments({
-            costPricePerCarton: { $lte: 0 },
             costPricePerPiece: { $lte: 0 }
         });
 
@@ -197,10 +193,7 @@ exports.getProfitReport = async (req, res) => {
                 if (!cost) {
                     const prod = await Product.findById(item.product);
                     if (prod) {
-                        const ppc = prod.piecesPerCarton || 1;
-                        const cCost = prod.costPricePerCarton || 0;
-                        const pCost = prod.costPricePerPiece || 0;
-                        cost = item.unit === 'Carton' ? (cCost || pCost * ppc) : (pCost || cCost / ppc);
+                        cost = prod.costPricePerPiece || 0;
                     }
                 }
 
